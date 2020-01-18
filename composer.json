@@ -1,0 +1,39 @@
+{
+    "name": "lordjancso/translation-bundle",
+    "type": "symfony-bundle",
+    "description": "Translation bundle for Symfony to manage your translations.",
+    "keywords": ["translation", "translate", "symfony", "bundle", "lordjancso"],
+    "homepage": "https://github.com/lordjancso/TranslationBundle",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "lordjancso",
+            "homepage": "https://github.com/lordjancso"
+        }
+    ],
+    "require": {
+        "php": "^7.2",
+        "doctrine/doctrine-bundle": "^2.0",
+        "doctrine/orm": "^2.7",
+        "symfony/config": "^4.0",
+        "symfony/console": "^4.0",
+        "symfony/dependency-injection": "^4.0",
+        "symfony/yaml": "^4.0"
+    },
+    "require-dev": {
+        "symfony/phpunit-bridge": "^4.0"
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "Lordjancso\\TranslationBundle\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Lordjancso\\TranslationBundle\\Tests\\": "tests/"
+        }
+    }
+}
