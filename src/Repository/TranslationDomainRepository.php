@@ -16,7 +16,6 @@ class TranslationDomainRepository extends EntityRepository
     public function findAllToExport(): array
     {
         return $this->createQueryBuilder('td')
-            ->select('td.id', 'td.name', 'td.locale')
             ->addOrderBy('td.name', 'ASC')
             ->addOrderBy('td.locale', 'ASC')
             ->getQuery()
