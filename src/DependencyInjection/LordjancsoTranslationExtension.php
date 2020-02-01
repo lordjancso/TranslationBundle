@@ -13,5 +13,11 @@ class LordjancsoTranslationExtension extends Extension
     {
         $loader = new XmlFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'));
         $loader->load('services.xml');
+
+        $configuration = $this->getConfiguration($configs, $container);
+        $config = $this->processConfiguration($configuration, $configs);
+
+        sort($config['managed_locales']);
+        $container->setParameter('lordjancso_translation.managed_locales', $config['managed_locales']);
     }
 }
