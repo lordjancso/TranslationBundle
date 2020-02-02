@@ -3,10 +3,12 @@
 namespace Lordjancso\TranslationBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 /**
- * @ORM\Table(name="lj_translation_keys")
+ * @ORM\Table(name="lj_translation_keys", uniqueConstraints={@ORM\UniqueConstraint(columns={"name", "domain"})})
  * @ORM\Entity(repositoryClass="Lordjancso\TranslationBundle\Repository\TranslationKeyRepository")
+ * @UniqueEntity(fields={"name", "domain"})
  */
 class TranslationKey
 {
@@ -22,7 +24,7 @@ class TranslationKey
     /**
      * @var string
      *
-     * @ORM\Column(name="name", type="string", length=255, nullable=false)
+     * @ORM\Column(name="name", type="string", length=255, nullable=false, options={"collation":"utf8_bin"})
      */
     private $name;
 
