@@ -27,7 +27,7 @@ class TranslationExporterTest extends TestCase
                 'id' => 1,
                 'name' => 'domain1',
                 'locale' => 'en',
-                'path' => '/some/path/to/file.yaml',
+                'path' => 'some/path/to/file.yaml',
                 'hash' => 'iddqd',
             ],
         ], $service->getDomains());
@@ -51,7 +51,7 @@ class TranslationExporterTest extends TestCase
                     'id' => 1,
                     'name' => 'domain1',
                     'locale' => 'en',
-                    'path' => '/some/path/to/file.yaml',
+                    'path' => 'some/path/to/file.yaml',
                     'hash' => 'iddqd',
                 ],
             ]);

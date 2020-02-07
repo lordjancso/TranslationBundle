@@ -44,7 +44,7 @@ class ExportTranslationsCommandTest extends TestCase
                     'id' => 1,
                     'name' => 'domain1',
                     'locale' => 'en',
-                    'path' => '/dummy/domain1.en.yaml',
+                    'path' => 'dummy/domain1.en.yaml',
                 ],
             ]);
         $exporter->method('exportDomain')
@@ -79,7 +79,7 @@ class ExportTranslationsCommandTest extends TestCase
                     'id' => 1,
                     'name' => 'domain1',
                     'locale' => 'en',
-                    'path' => '/dummy/domain1.en.yaml',
+                    'path' => 'dummy/domain1.en.yaml',
                 ],
             ]);
         $exporter->method('exportDomain')

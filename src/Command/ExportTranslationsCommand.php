@@ -51,14 +51,14 @@ class ExportTranslationsCommand extends Command
         foreach ($translationDomains as $translationDomain) {
             $newTranslations = $this->exporter->exportDomain($translationDomain['id'], $translationDomain['name']);
             $oldTranslations = [];
-            $filename = $outputPath.$translationDomain['path'];
+            $filename = $outputPath.'/'.$translationDomain['path'];
 
             if (!$this->filesystem->exists(pathinfo($filename)['dirname'])) {
                 $this->filesystem->mkdir(pathinfo($filename)['dirname']);
             }
 
             if ($this->filesystem->exists($filename)) {
-                $oldTranslations = Yaml::parseFile($filename);
+                $oldTranslations = Yaml::parseFile($filename) ?: [];
             }
 
             $translations = array_merge($oldTranslations, $newTranslations);

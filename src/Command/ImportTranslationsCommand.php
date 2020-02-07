@@ -67,7 +67,7 @@ class ImportTranslationsCommand extends Command
         foreach ($finder as $file) {
             $io->write("Importing {$file->getRealPath()}... ");
 
-            $relativePath = str_replace($this->projectDir, '.', $file->getRealPath());
+            $relativePath = str_replace($this->projectDir.'/', '', $file->getRealPath());
             list($domain, $locale) = explode('.', $file->getFilename());
 
             if (!in_array($locale, $this->managedLocales, true)) {
