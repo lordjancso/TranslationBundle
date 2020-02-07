@@ -133,14 +133,7 @@ class ImportTranslationsCommand extends Command
         }
 
         if (!empty($dbTranslationKeys)) {
-            $this->em->getRepository(TranslationValue::class)->createQueryBuilder('tv')
-                ->delete()
-                ->andWhere('tv.domain = :domain')
-                ->setParameter('domain', $translationDomain)
-                ->andWhere('tv.key IN (:existingTranslationKeyIds)')
-                ->setParameter('existingTranslationKeyIds', $dbTranslationKeys)
-                ->getQuery()
-                ->execute();
+            $this->em->getRepository(TranslationValue::class)->deleteAllByDomainAndKey($translationDomain, $dbTranslationKeys);
         }
 
         // delete translation keys without translation value

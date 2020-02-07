@@ -3,6 +3,7 @@
 namespace Lordjancso\TranslationBundle\Repository;
 
 use Doctrine\ORM\EntityRepository;
+use Lordjancso\TranslationBundle\Entity\TranslationDomain;
 use Lordjancso\TranslationBundle\Entity\TranslationValue;
 
 /**
@@ -23,5 +24,17 @@ class TranslationValueRepository extends EntityRepository
             ->setParameter('key', $keyId)
             ->getQuery()
             ->getArrayResult();
+    }
+
+    public function deleteAllByDomainAndKey(TranslationDomain $translationDomain, array $translationKeys)
+    {
+        return $this->createQueryBuilder('tv')
+            ->delete()
+            ->andWhere('tv.domain = :domain')
+            ->setParameter('domain', $translationDomain)
+            ->andWhere('tv.key IN (:translationKeys)')
+            ->setParameter('translationKeys', $translationKeys)
+            ->getQuery()
+            ->execute();
     }
 }
