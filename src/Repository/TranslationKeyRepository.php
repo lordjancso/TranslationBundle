@@ -28,6 +28,7 @@ class TranslationKeyRepository extends EntityRepository
     public function insertAndGet(TranslationDomain $translationDomain, array $names, bool $isIgnore = false): array
     {
         foreach ($names as $i => $name) {
+            $name = addslashes($name);
             $names[$i] = "'{$name}','{$translationDomain->getName()}'";
         }
 
