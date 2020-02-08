@@ -31,13 +31,13 @@ class ExportTranslationsCommand extends Command
     protected function configure(): void
     {
         $this->setDescription('Exports the translations from database to files.')
-            ->addOption('output-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.');
+            ->addOption('export-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
-        $outputPath = $this->projectDir.$input->getOption('output-path');
+        $exportPath = $this->projectDir.$input->getOption('export-path');
         $translationDomains = $this->exporter->getDomains();
 
         if (0 === count($translationDomains)) {
@@ -46,12 +46,12 @@ class ExportTranslationsCommand extends Command
             return 1;
         }
 
-        $this->filesystem->mkdir($outputPath);
+        $this->filesystem->mkdir($exportPath);
 
         foreach ($translationDomains as $translationDomain) {
             $newTranslations = $this->exporter->exportDomain($translationDomain['id'], $translationDomain['name']);
             $oldTranslations = [];
-            $filename = $outputPath.'/'.$translationDomain['path'];
+            $filename = $exportPath.'/'.$translationDomain['path'];
 
             if (!$this->filesystem->exists(pathinfo($filename)['dirname'])) {
                 $this->filesystem->mkdir(pathinfo($filename)['dirname']);
