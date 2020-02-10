@@ -25,14 +25,24 @@
             </tr>
         </thead>
         <tbody>
-            {% for translationDomain in translationDomains %}
+            {% for domain, stat in stats %}
                 <tr>
                     <td>
-                        {{ translationDomain.name }}
+                        {{ domain }}
                     </td>
-                    {% for managedLocale in managedLocales %}
-                        <td>
-                            {{ managedLocale }}
+                    {% for item in stat %}
+                        {% set color = 'transparent' %}
+
+                        {% if item.percent == 100 %}
+                            {% set color = 'lightgreen' %}
+                        {% elseif item.percent > 50 %}
+                            {% set color = 'yellow' %}
+                        {% else %}
+                            {% set color = 'lightpink' %}
+                        {% endif %}
+
+                        <td style="background-color: {{ color }};">
+                            {{ item.translated }} / {{ item.keys }} ({{ item.percent }}%)
                         </td>
                     {% endfor %}
                 </tr>

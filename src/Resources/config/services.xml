@@ -21,7 +21,7 @@
         </service>
 
         <service id="lordjancso_translation.controller.translations" class="Lordjancso\TranslationBundle\Controller\TranslationController" public="true">
-            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument type="service" id="Lordjancso\TranslationBundle\Service\TranslationStats" />
             <argument>%lordjancso_translation.managed_locales%</argument>
         </service>
 

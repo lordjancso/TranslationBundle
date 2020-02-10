@@ -27,11 +27,14 @@ class TranslationStats
             $valueStats = $this->em->getRepository(TranslationValue::class)->getStats($domain);
 
             foreach ($this->managedLocales as $locale) {
+                $translated = isset($valueStats[$locale])
+                    ? $valueStats[$locale]
+                    : 0;
+
                 $stat[$locale] = [
                     'keys' => $keyCount,
-                    'translated' => isset($valueStats[$locale])
-                        ? $valueStats[$locale]
-                        : 0,
+                    'translated' => $translated,
+                    'percent' => floor($translated / $keyCount * 100),
                 ];
             }
 
