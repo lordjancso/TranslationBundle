@@ -21,4 +21,16 @@ class TranslationDomainRepository extends EntityRepository
             ->getQuery()
             ->getArrayResult();
     }
+
+    public function getAllNames(): array
+    {
+        $translationDomains = $this->createQueryBuilder('td')
+            ->select('td.name')
+            ->addOrderBy('td.name', 'ASC')
+            ->addGroupBy('td.name')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_column($translationDomains, 'name');
+    }
 }

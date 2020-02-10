@@ -33,6 +33,11 @@
             <argument type="service" id="doctrine.orm.entity_manager" />
         </service>
 
+        <service id="Lordjancso\TranslationBundle\Service\TranslationManager">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument>%lordjancso_translation.managed_locales%</argument>
+        </service>
+
         <service id="Lordjancso\TranslationBundle\Service\TranslationStats">
             <argument type="service" id="doctrine.orm.entity_manager" />
             <argument>%lordjancso_translation.managed_locales%</argument>
