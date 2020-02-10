@@ -62,4 +62,22 @@ class TranslationKeyRepository extends EntityRepository
             return $item['name'];
         }, $dbTranslationKeys);
     }
+
+    public function getStats(): array
+    {
+        $items = $this->createQueryBuilder('tk')
+            ->select('COUNT(DISTINCT tk.id) AS count, tk.domain')
+            ->groupBy('tk.domain')
+            ->orderBy('tk.domain', 'ASC')
+            ->getQuery()
+            ->getArrayResult();
+
+        $stats = [];
+
+        foreach ($items as $item) {
+            $stats[$item['domain']] = (int) $item['count'];
+        }
+
+        return $stats;
+    }
 }

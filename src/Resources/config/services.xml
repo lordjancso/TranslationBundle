@@ -32,5 +32,10 @@
         <service id="lordjancso_translation.service.translation_importer" class="Lordjancso\TranslationBundle\Service\TranslationImporter">
             <argument type="service" id="doctrine.orm.entity_manager" />
         </service>
+
+        <service id="Lordjancso\TranslationBundle\Service\TranslationStats">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument>%lordjancso_translation.managed_locales%</argument>
+        </service>
     </services>
 </container>
