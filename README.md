@@ -1,20 +1,24 @@
-##Installation
+## Installation
 
 - TODO
 
-##Configuration
+## Configuration
 
 - TODO
 
-##Usage
+## Usage
 
 - TODO
 
-##Limitations
+## Limitations
 
 - Only supports Doctrine ORM with MySQL
 
-##Plans
+## TODO
+
+- Add delete methods to TranslationManager
+
+## Plans
 
 - Add TravisCI
   - https://symfony.com/doc/current/bundles/best_practices.html#continuous-integration
@@ -34,3 +38,5 @@
   - merge to keep database data
 
 - Support as many Symfony versions as possible
+
+- Google Translate api integration
