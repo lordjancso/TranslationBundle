@@ -32,9 +32,12 @@ before_script:
   - if [ "$DEPENDENCIES" = "dev" ]; then perl -pi -e 's/^}$/,"minimum-stability":"dev"}/' composer.json; fi;
 
 install:
-  - composer update --prefer-stable --prefer-lowest --prefer-dist --no-interaction
+  - composer install --dev --no-interaction
   - ./vendor/bin/simple-phpunit install
 
 script:
   - composer validate --strict --no-check-lock
   - ./vendor/bin/simple-phpunit $PHPUNIT_FLAGS
+
+after_success:
+  - travis_retry php vendor/bin/php-coveralls
