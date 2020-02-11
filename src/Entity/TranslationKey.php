@@ -2,6 +2,8 @@
 
 namespace Lordjancso\TranslationBundle\Entity;
 
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
@@ -35,6 +37,18 @@ class TranslationKey
      */
     private $domain;
 
+    /**
+     * @var TranslationValue[]
+     *
+     * @ORM\OneToMany(targetEntity="TranslationValue", mappedBy="key", cascade={"remove"})
+     */
+    private $translations;
+
+    public function __construct()
+    {
+        $this->translations = new ArrayCollection();
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -62,5 +76,13 @@ class TranslationKey
         $this->domain = $domain;
 
         return $this;
+    }
+
+    /**
+     * @return ArrayCollection|TranslationValue[]
+     */
+    public function getTranslations(): Collection
+    {
+        return $this->translations;
     }
 }

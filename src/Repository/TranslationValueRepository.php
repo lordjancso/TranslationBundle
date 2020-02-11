@@ -38,6 +38,21 @@ class TranslationValueRepository extends EntityRepository
             ->execute();
     }
 
+    public function getAllByDomainAndLocale(string $domain, string $locale): array
+    {
+        return $this->createQueryBuilder('tv')
+            ->select('tk.name AS key', 'tv.content')
+            ->innerJoin('tv.key', 'tk')
+            ->innerJoin('tv.domain', 'td')
+            ->andWhere('tk.domain = :domain')
+            ->andWhere('td.name = :domain')
+            ->setParameter('domain', $domain)
+            ->andWhere('td.locale = :locale')
+            ->setParameter('locale', $locale)
+            ->getQuery()
+            ->getArrayResult();
+    }
+
     public function getStats(string $domain): array
     {
         $items = $this->createQueryBuilder('tv')

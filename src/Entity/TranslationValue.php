@@ -46,7 +46,7 @@ class TranslationValue
     /**
      * @var TranslationKey
      *
-     * @ORM\ManyToOne(targetEntity="TranslationKey")
+     * @ORM\ManyToOne(targetEntity="TranslationKey", inversedBy="translations")
      * @ORM\JoinColumn(name="key_id", referencedColumnName="id", nullable=false)
      */
     private $key;
