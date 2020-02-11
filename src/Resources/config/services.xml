@@ -13,10 +13,9 @@
         </service>
 
         <service id="lordjancso_translation.command.import_translations" class="Lordjancso\TranslationBundle\Command\ImportTranslationsCommand">
+            <argument type="service" id="Lordjancso\TranslationBundle\Service\TranslationManager" />
             <argument type="service" id="lordjancso_translation.service.translation_importer" />
-            <argument type="service" id="doctrine.orm.entity_manager" />
             <argument type="string">%kernel.project_dir%</argument>
-            <argument>%lordjancso_translation.managed_locales%</argument>
             <tag name="console.command" />
         </service>
 

@@ -2,14 +2,10 @@
 
 namespace Lordjancso\TranslationBundle\Tests\Service;
 
-use Doctrine\DBAL\Connection;
-use Doctrine\DBAL\Platforms\AbstractPlatform;
-use Doctrine\ORM\EntityManagerInterface;
 use Lordjancso\TranslationBundle\Command\ImportTranslationsCommand;
 use Lordjancso\TranslationBundle\Entity\TranslationDomain;
-use Lordjancso\TranslationBundle\Entity\TranslationValue;
-use Lordjancso\TranslationBundle\Repository\TranslationValueRepository;
 use Lordjancso\TranslationBundle\Service\TranslationImporter;
+use Lordjancso\TranslationBundle\Service\TranslationManager;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
@@ -79,12 +75,19 @@ class ImportTranslationsCommandTest extends TestCase
     {
         $importer = $this->createMock(TranslationImporter::class);
         $importer->method('importDomain')
-            ->willReturn(
-                (new TranslationDomain())
-                    ->setName('domain')
-                    ->setLocale('en')
-                    ->setPath('x')
-            );
+            ->willReturnCallback(function () {
+                $translationDomain = $this->createMock(TranslationDomain::class);
+                $translationDomain->method('getId')
+                    ->willReturn(1);
+                $translationDomain->method('getName')
+                    ->willReturn('domain');
+                $translationDomain->method('getLocale')
+                    ->willReturn('en');
+                $translationDomain->method('getPath')
+                    ->willReturn('x');
+
+                return $translationDomain;
+            });
         $importer->method('importKeys')
             ->willReturn(['some-key' => 'some-trans']);
 
@@ -97,36 +100,16 @@ class ImportTranslationsCommandTest extends TestCase
 
     private function getCommandTester($importer, $platformName): CommandTester
     {
-        $translationValueRepository = $this->createMock(TranslationValueRepository::class);
-        $translationValueRepository->method('deleteAllByDomainAndKey')
+        $manager = $this->createMock(TranslationManager::class);
+        $manager->method('getDatabasePlatformName')
+            ->willReturn($platformName);
+        $manager->method('getManagedLocales')
+            ->willReturn(['en']);
+        $manager->method('insertOrUpdateTranslationValues')
             ->willReturn(true);
 
-        $em = $this->createMock(EntityManagerInterface::class);
-        $em->method('getConnection')
-            ->willReturnCallback(function () use ($platformName) {
-                $connection = $this->createMock(Connection::class);
-                $connection->method('getDatabasePlatform')
-                    ->willReturnCallback(function () use ($platformName) {
-                        $platform = $this->createMock(AbstractPlatform::class);
-                        $platform->method('getName')
-                            ->willReturn($platformName);
-
-                        return $platform;
-                    });
-
-                return $connection;
-            });
-        $em->method('getRepository')
-            ->willReturnCallback(function ($class) use ($translationValueRepository) {
-                if (TranslationValue::class === $class) {
-                    return $translationValueRepository;
-                }
-
-                return null;
-            });
-
         $application = new Application();
-        $application->add(new ImportTranslationsCommand($importer, $em, __DIR__.'/../_output', ['en']));
+        $application->add(new ImportTranslationsCommand($manager, $importer, __DIR__.'/../_output'));
         $command = $application->find('lordjancso:import-translations');
         $command->setApplication($application);
 

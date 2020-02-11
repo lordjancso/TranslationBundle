@@ -2,10 +2,10 @@
 
 namespace Lordjancso\TranslationBundle\Command;
 
-use Doctrine\ORM\EntityManagerInterface;
 use Lordjancso\TranslationBundle\Entity\TranslationDomain;
 use Lordjancso\TranslationBundle\Entity\TranslationValue;
 use Lordjancso\TranslationBundle\Service\TranslationImporter;
+use Lordjancso\TranslationBundle\Service\TranslationManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -18,17 +18,15 @@ class ImportTranslationsCommand extends Command
 {
     protected static $defaultName = 'lordjancso:import-translations';
 
+    protected $manager;
     protected $importer;
-    protected $em;
     protected $projectDir;
-    protected $managedLocales;
 
-    public function __construct(TranslationImporter $importer, EntityManagerInterface $em, string $projectDir, array $managedLocales)
+    public function __construct(TranslationManager $manager, TranslationImporter $importer, string $projectDir)
     {
+        $this->manager = $manager;
         $this->importer = $importer;
-        $this->em = $em;
         $this->projectDir = $projectDir;
-        $this->managedLocales = $managedLocales;
 
         parent::__construct();
     }
@@ -43,7 +41,7 @@ class ImportTranslationsCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        if ('mysql' !== $this->em->getConnection()->getDatabasePlatform()->getName()) {
+        if ('mysql' !== $this->manager->getDatabasePlatformName()) {
             $io->error('The import command can only be executed safely on \'mysql\'.');
 
             return 1;
@@ -70,7 +68,7 @@ class ImportTranslationsCommand extends Command
             $relativePath = str_replace($this->projectDir.'/', '', $file->getRealPath());
             list($domain, $locale) = explode('.', $file->getFilename());
 
-            if (!in_array($locale, $this->managedLocales, true)) {
+            if (!in_array($locale, $this->manager->getManagedLocales(), true)) {
                 $io->writeln('<comment>SKIP! Not in managed locales.</comment>');
 
                 continue;
@@ -110,36 +108,22 @@ class ImportTranslationsCommand extends Command
 
         // manage TranslationValue
 
-        $updateTranslationValues = [];
+        $contentsAndKeyIds = [];
 
         foreach ($yaml as $keyName => $content) {
-            $content = addslashes($content);
             $translationKeyId = array_search($keyName, $dbTranslationKeys);
-            unset($dbTranslationKeys[$translationKeyId]);
+            $contentsAndKeyIds[$translationKeyId] = $content;
 
-            $updateTranslationValues[] = ["'{$content}'", "'{$locale}'", $translationDomain->getId(), $translationKeyId];
+            unset($dbTranslationKeys[$translationKeyId]);
         }
 
-        if (!empty($updateTranslationValues)) {
-            foreach ($updateTranslationValues as $i => $value) {
-                $updateTranslationValues[$i] = implode(',', $value);
-            }
-
-            $sql = 'INSERT INTO lj_translation_values (content, locale, domain_id, key_id) VALUES (';
-            $sql .= implode('),(', $updateTranslationValues).') ';
-            $sql .= 'ON DUPLICATE KEY UPDATE content = VALUES(content)';
-
-            $this->em->getConnection()->executeQuery($sql);
+        if (!empty($contentsAndKeyIds)) {
+            $this->manager->insertOrUpdateTranslationValues($translationDomain->getId(), $locale, $contentsAndKeyIds);
         }
 
         if (!empty($dbTranslationKeys)) {
-            $this->em->getRepository(TranslationValue::class)->deleteAllByDomainAndKey($translationDomain, $dbTranslationKeys);
+            $this->manager->deleteAllTranslationValues($translationDomain, $dbTranslationKeys);
         }
-
-        // delete translation keys without translation value
-
-        $sql = 'DELETE FROM lj_translation_keys tk WHERE NOT EXISTS (SELECT id FROM lj_translation_values tv WHERE tv.key_id = tk.id)';
-        $this->em->getConnection()->executeQuery($sql);
 
         return [
             'status' => 'success',
