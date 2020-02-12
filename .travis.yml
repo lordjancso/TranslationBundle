@@ -37,7 +37,7 @@ install:
 
 script:
   - composer validate --strict --no-check-lock
-  - ./vendor/bin/simple-phpunit $PHPUNIT_FLAGS
+  - ./vendor/bin/simple-phpunit --coverage-clover build/logs/clover.xml $PHPUNIT_FLAGS
 
 after_success:
-  - travis_retry php vendor/bin/php-coveralls
+  - travis_retry php ./vendor/bin/php-coveralls
