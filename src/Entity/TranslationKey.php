@@ -78,6 +78,20 @@ class TranslationKey
         return $this;
     }
 
+    public function addTranslation(TranslationValue $translationValue): self
+    {
+        $this->translations->add($translationValue);
+
+        return $this;
+    }
+
+    public function removeTranslation(TranslationValue $translationValue): self
+    {
+        $this->translations->removeElement($translationValue);
+
+        return $this;
+    }
+
     /**
      * @return ArrayCollection|TranslationValue[]
      */
