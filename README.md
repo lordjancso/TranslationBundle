@@ -1,6 +1,15 @@
 [![Build Status](https://travis-ci.com/lordjancso/TranslationBundle.svg?branch=develop)](https://travis-ci.com/lordjancso/TranslationBundle)
 [![Coverage Status](https://coveralls.io/repos/github/lordjancso/TranslationBundle/badge.svg?branch=develop)](https://coveralls.io/github/lordjancso/TranslationBundle?branch=develop)
 
+[![Latest Stable Version](https://poser.pugx.org/lordjancso/translation-bundle/v/stable?format=flat)](https://packagist.org/packages/lordjancso/translation-bundle)
+[![Latest Unstable Version](https://poser.pugx.org/lordjancso/translation-bundle/v/unstable?format=flat)](https://packagist.org/packages/lordjancso/translation-bundle)
+
+[![Total Downloads](https://poser.pugx.org/lordjancso/translation-bundle/downloads?format=flat)](https://packagist.org/packages/lordjancso/translation-bundle)
+[![Monthly Downloads](https://poser.pugx.org/lordjancso/translation-bundle/d/monthly?format=flat)](https://packagist.org/packages/lordjancso/translation-bundle)
+[![Daily Downloads](https://poser.pugx.org/lordjancso/translation-bundle/d/daily?format=flat)](https://packagist.org/packages/lordjancso/translation-bundle)
+
+[![License](https://poser.pugx.org/lordjancso/translation-bundle/license?format=flat)](https://packagist.org/packages/lordjancso/translation-bundle)
+
 ## Installation
 
 - TODO

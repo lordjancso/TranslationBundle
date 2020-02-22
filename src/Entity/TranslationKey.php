@@ -38,6 +38,20 @@ class TranslationKey
     private $domain;
 
     /**
+     * @var \DateTimeInterface
+     *
+     * @ORM\Column(name="created_at", type="datetime", nullable=false)
+     */
+    private $createdAt;
+
+    /**
+     * @var \DateTimeInterface
+     *
+     * @ORM\Column(name="updated_at", type="datetime", nullable=false)
+     */
+    private $updatedAt;
+
+    /**
      * @var TranslationValue[]
      *
      * @ORM\OneToMany(targetEntity="TranslationValue", mappedBy="key", cascade={"remove"})
@@ -74,6 +88,30 @@ class TranslationKey
     public function setDomain(string $domain): self
     {
         $this->domain = $domain;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeInterface
+    {
+        return $this->createdAt;
+    }
+
+    public function setCreatedAt(\DateTimeInterface $createdAt): self
+    {
+        $this->createdAt = $createdAt;
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeInterface
+    {
+        return $this->updatedAt;
+    }
+
+    public function setUpdatedAt(\DateTimeInterface $updatedAt): self
+    {
+        $this->updatedAt = $updatedAt;
 
         return $this;
     }
