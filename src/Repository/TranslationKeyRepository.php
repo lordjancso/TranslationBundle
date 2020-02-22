@@ -29,7 +29,7 @@ class TranslationKeyRepository extends EntityRepository
     {
         foreach ($names as $i => $name) {
             $name = addslashes($name);
-            $names[$i] = "'{$name}','{$translationDomain->getName()}'";
+            $names[$i] = "'{$name}','{$translationDomain->getName()}',NOW(),NOW()";
         }
 
         $ignore = $isIgnore
@@ -38,9 +38,9 @@ class TranslationKeyRepository extends EntityRepository
 
         $onDuplicate = $isIgnore
             ? ''
-            : 'ON DUPLICATE KEY UPDATE name = VALUES(name)';
+            : 'ON DUPLICATE KEY UPDATE name = VALUES(name), updated_at = VALUES(updated_at)';
 
-        $sql = 'INSERT '.$ignore.' INTO lj_translation_keys (name, domain) VALUES ('.implode('),(', $names).') '.$onDuplicate;
+        $sql = 'INSERT '.$ignore.' INTO lj_translation_keys (name, domain, created_at, updated_at) VALUES ('.implode('),(', $names).') '.$onDuplicate;
 
         $this->_em->getConnection()->executeQuery($sql);
 

@@ -5,6 +5,7 @@ namespace Lordjancso\TranslationBundle\Service;
 use Doctrine\ORM\EntityManagerInterface;
 use Lordjancso\TranslationBundle\Entity\TranslationDomain;
 use Lordjancso\TranslationBundle\Entity\TranslationKey;
+use Lordjancso\TranslationBundle\Entity\TranslationValue;
 
 class TranslationImporter
 {
@@ -77,5 +78,40 @@ class TranslationImporter
         }
 
         return $dbTranslationKeys;
+    }
+
+    public function importValues(int $domainId, string $locale, array $contentsAndKeyIds): bool
+    {
+        $data = [];
+
+        foreach ($contentsAndKeyIds as $keyId => $content) {
+            $data[] = implode(',', [
+                '\''.addslashes($content).'\'',
+                '\''.$locale.'\'',
+                $domainId,
+                $keyId,
+                'NOW()',
+                'NOW()',
+            ]);
+        }
+
+        $sql = 'INSERT INTO lj_translation_values (content, locale, domain_id, key_id, created_at, updated_at) VALUES (';
+        $sql .= implode('),(', $data).') ';
+        $sql .= 'ON DUPLICATE KEY UPDATE content = VALUES(content), updated_at = VALUES(updated_at)';
+
+        $this->em->getConnection()->executeQuery($sql);
+
+        return true;
+    }
+
+    public function deleteAllTranslationValues(TranslationDomain $translationDomain, array $dbTranslationKeys): bool
+    {
+        $this->em->getRepository(TranslationValue::class)->deleteAllByDomainAndKey($translationDomain, $dbTranslationKeys);
+
+        // delete translation keys without translation value
+        $sql = 'DELETE FROM lj_translation_keys tk WHERE NOT EXISTS (SELECT id FROM lj_translation_values tv WHERE tv.key_id = tk.id)';
+        $this->em->getConnection()->executeQuery($sql);
+
+        return true;
     }
 }

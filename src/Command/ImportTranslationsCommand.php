@@ -3,7 +3,6 @@
 namespace Lordjancso\TranslationBundle\Command;
 
 use Lordjancso\TranslationBundle\Entity\TranslationDomain;
-use Lordjancso\TranslationBundle\Entity\TranslationValue;
 use Lordjancso\TranslationBundle\Service\TranslationImporter;
 use Lordjancso\TranslationBundle\Service\TranslationManager;
 use Symfony\Component\Console\Command\Command;
@@ -118,11 +117,11 @@ class ImportTranslationsCommand extends Command
         }
 
         if (!empty($contentsAndKeyIds)) {
-            $this->manager->insertOrUpdateTranslationValues($translationDomain->getId(), $locale, $contentsAndKeyIds);
+            $this->importer->importValues($translationDomain->getId(), $locale, $contentsAndKeyIds);
         }
 
         if (!empty($dbTranslationKeys)) {
-            $this->manager->deleteAllTranslationValues($translationDomain, $dbTranslationKeys);
+            $this->importer->deleteAllTranslationValues($translationDomain, $dbTranslationKeys);
         }
 
         return [
