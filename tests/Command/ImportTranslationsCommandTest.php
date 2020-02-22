@@ -25,9 +25,7 @@ class ImportTranslationsCommandTest extends TestCase
 
     public function testExecuteWithNoMysql(): void
     {
-        $importer = $this->createMock(TranslationImporter::class);
-
-        $commandTester = $this->getCommandTester($importer, 'pgsql');
+        $commandTester = $this->getCommandTester('pgsql');
         $commandTester->execute([]);
 
         $this->assertStringContainsString('The import command can only be executed safely on \'mysql\'.', $commandTester->getDisplay());
@@ -36,9 +34,7 @@ class ImportTranslationsCommandTest extends TestCase
 
     public function testExecuteNoTranslationFileFound(): void
     {
-        $importer = $this->createMock(TranslationImporter::class);
-
-        $commandTester = $this->getCommandTester($importer, 'mysql');
+        $commandTester = $this->getCommandTester('mysql');
         $commandTester->execute([]);
 
         $this->assertStringContainsString('No translation file found in path', $commandTester->getDisplay());
@@ -49,9 +45,7 @@ class ImportTranslationsCommandTest extends TestCase
     {
         (new Filesystem())->appendToFile(__DIR__.'/../_output/translations/domain.de.yaml', '\'key1\': \'trans1\'');
 
-        $importer = $this->createMock(TranslationImporter::class);
-
-        $commandTester = $this->getCommandTester($importer, 'mysql');
+        $commandTester = $this->getCommandTester('mysql');
         $commandTester->execute([]);
 
         $this->assertStringContainsString('SKIP! Not in managed locales.', $commandTester->getDisplay());
@@ -62,9 +56,7 @@ class ImportTranslationsCommandTest extends TestCase
     {
         (new Filesystem())->appendToFile(__DIR__.'/../_output/translations/domain.en.yaml', '\'key1\': \'trans1\'');
 
-        $importer = $this->createMock(TranslationImporter::class);
-
-        $commandTester = $this->getCommandTester($importer, 'mysql');
+        $commandTester = $this->getCommandTester('mysql');
         $commandTester->execute([]);
 
         $this->assertStringContainsString('SKIP! No changes in the file.', $commandTester->getDisplay());
@@ -91,21 +83,26 @@ class ImportTranslationsCommandTest extends TestCase
         $importer->method('importKeys')
             ->willReturn(['some-key' => 'some-trans']);
 
-        $commandTester = $this->getCommandTester($importer, 'mysql');
+        $commandTester = $this->getCommandTester('mysql', $importer);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('SUCCESS!', $commandTester->getDisplay());
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    private function getCommandTester($importer, $platformName): CommandTester
+    private function getCommandTester($platformName, $importer = null): CommandTester
     {
         $manager = $this->createMock(TranslationManager::class);
         $manager->method('getDatabasePlatformName')
             ->willReturn($platformName);
         $manager->method('getManagedLocales')
             ->willReturn(['en']);
-        $manager->method('insertOrUpdateTranslationValues')
+
+        if (null === $importer) {
+            $importer = $this->createMock(TranslationImporter::class);
+        }
+
+        $importer->method('importValues')
             ->willReturn(true);
 
         $application = new Application();
