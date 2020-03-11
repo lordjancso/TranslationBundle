@@ -46,7 +46,13 @@ class ImportTranslationsCommand extends Command
             return 1;
         }
 
-        $importPath = $this->projectDir.$input->getOption('import-path');
+        $importPath = $input->getOption('import-path');
+
+        if ('/' !== substr($importPath, 0, 1)) {
+            $importPath = "/{$importPath}";
+        }
+
+        $importPath = $this->projectDir.$importPath;
 
         $finder = new Finder();
         $finder
