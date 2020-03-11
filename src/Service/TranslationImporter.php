@@ -48,18 +48,7 @@ class TranslationImporter
 
     public function importKeys(TranslationDomain $translationDomain, array $yaml): array
     {
-        $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->createQueryBuilder('tk')
-            ->select('tk.id', 'tk.name')
-            ->andWhere('tk.domain = :domain')
-            ->setParameter('domain', $translationDomain->getName())
-            ->addOrderBy('tk.id')
-            ->indexBy('tk', 'tk.id')
-            ->getQuery()
-            ->getArrayResult();
-
-        $dbTranslationKeys = array_map(function ($item) {
-            return $item['name'];
-        }, $dbTranslationKeys);
+        $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->getAllToImport($translationDomain);
 
         $yamlTranslationKeys = array_keys($yaml);
         $newTranslationKeys = array_diff($yamlTranslationKeys, $dbTranslationKeys);

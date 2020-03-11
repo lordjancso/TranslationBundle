@@ -2,9 +2,7 @@
 
 namespace Lordjancso\TranslationBundle\Tests\Service;
 
-use Doctrine\ORM\AbstractQuery;
 use Doctrine\ORM\EntityManagerInterface;
-use Doctrine\ORM\QueryBuilder;
 use Lordjancso\TranslationBundle\Entity\TranslationDomain;
 use Lordjancso\TranslationBundle\Repository\TranslationDomainRepository;
 use Lordjancso\TranslationBundle\Repository\TranslationKeyRepository;
@@ -116,27 +114,9 @@ class TranslationImporterTest extends TestCase
                 }
             });
 
-        $query = $this->createMock(AbstractQuery::class);
-        $query->method('getArrayResult')
-            ->willReturn([
-                [
-                    'id' => null,
-                    'name' => 'name',
-                ],
-            ]);
-
-        $queryBuilder = $this->createMock(QueryBuilder::class);
-        $queryBuilder->method('select')->willReturnSelf();
-        $queryBuilder->method('andWhere')->willReturnSelf();
-        $queryBuilder->method('setParameter')->willReturnSelf();
-        $queryBuilder->method('addOrderBy')->willReturnSelf();
-        $queryBuilder->method('indexBy')->willReturnSelf();
-        $queryBuilder->method('getQuery')
-            ->willReturn($query);
-
         $translationKeyRepository = $this->createMock(TranslationKeyRepository::class);
-        $translationKeyRepository->method('createQueryBuilder')
-            ->willReturn($queryBuilder);
+        $translationKeyRepository->method('getAllToImport')
+            ->willReturn(['name']);
         $translationKeyRepository->method('insertAndGet')
             ->willReturn(['new']);
 
