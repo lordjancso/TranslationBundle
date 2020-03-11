@@ -69,7 +69,7 @@ php bin/console lordjancso:export-translations
 
 ## TODO
 
-- Add delete methods to TranslationManager
+- Invalidate and update translation cache if it changes in the database
 
 ## Plans
 
