@@ -12,15 +12,56 @@
 
 ## Installation
 
-- TODO
+```
+composer require lordjancso/translation-bundle dev-master
+```
 
 ## Configuration
 
-- TODO
+```
+# config/packages/lordjancso_translation.yaml
+
+lordjancso_translation:
+    managed_locales: ['en', 'fr', 'de']
+```
+
+Optionally you can add a route to check your translation progress.
+
+```
+# config/routes/dev/lordjancso_translation.yaml
+
+lordjancso_translation:
+    resource: "@LordjancsoTranslationBundle/Resources/config/routes.xml"
+    prefix: /lordjancso-translation
+```
+
+Create the database tables with Doctrine or add them manually.
+
+```
+CREATE TABLE lj_translation_keys (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(255) NOT NULL COLLATE `utf8_bin`, domain VARCHAR(255) NOT NULL, created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL, UNIQUE INDEX UNIQ_5D812D955E237E06A7A91E0B (name, domain), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;
+CREATE TABLE lj_translation_values (id INT AUTO_INCREMENT NOT NULL, domain_id INT NOT NULL, key_id INT NOT NULL, content VARCHAR(255) NOT NULL, locale VARCHAR(255) NOT NULL, created_at DATETIME NOT NULL, updated_at DATETIME NOT NULL, INDEX IDX_F034BEAA115F0EE5 (domain_id), INDEX IDX_F034BEAAD145533 (key_id), UNIQUE INDEX UNIQ_F034BEAAD1455334180C698 (key_id, locale), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;
+CREATE TABLE lj_translation_domains (id INT AUTO_INCREMENT NOT NULL, name VARCHAR(255) NOT NULL, locale VARCHAR(255) NOT NULL, path VARCHAR(255) DEFAULT NULL, hash VARCHAR(255) DEFAULT NULL, UNIQUE INDEX UNIQ_F3DB21D45E237E064180C698 (name, locale), PRIMARY KEY(id)) DEFAULT CHARACTER SET utf8mb4 COLLATE `utf8mb4_unicode_ci` ENGINE = InnoDB;
+ALTER TABLE lj_translation_values ADD CONSTRAINT FK_F034BEAA115F0EE5 FOREIGN KEY (domain_id) REFERENCES lj_translation_domains (id);
+ALTER TABLE lj_translation_values ADD CONSTRAINT FK_F034BEAAD145533 FOREIGN KEY (key_id) REFERENCES lj_translation_keys (id);
+```
 
 ## Usage
 
-- TODO
+### Import
+
+Create your translation files into your translations folder and run the import command.
+
+```
+php bin/console lordjancso:import-translations
+```
+
+### Export
+
+If your translations changed in the database, you should export them.
+
+```
+php bin/console lordjancso:export-translations
+```
 
 ## Limitations
 
@@ -31,9 +72,6 @@
 - Add delete methods to TranslationManager
 
 ## Plans
-
-- Add TravisCI
-  - https://symfony.com/doc/current/bundles/best_practices.html#continuous-integration
 
 - Symfony Flex configuration recipe
   - https://symfony.com/doc/current/bundles/best_practices.html#installation
