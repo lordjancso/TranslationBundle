@@ -28,6 +28,11 @@ class TranslationManager
         return $this->managedLocales;
     }
 
+    public function getAllDomainNames(): array
+    {
+        return $this->em->getRepository(TranslationDomain::class)->getAllNames();
+    }
+
     public function updateTranslationsByKey(TranslationKey $translationKey, array $translations): bool
     {
         foreach ($translations as $locale => $content) {
@@ -64,5 +69,46 @@ class TranslationManager
         $this->em->flush();
 
         return true;
+    }
+
+    /**
+     * @param TranslationKey[] $translationKeys
+     */
+    public function deleteKeys(array $translationKeys): void
+    {
+        foreach ($translationKeys as $translationKey) {
+            $this->em->remove($translationKey);
+        }
+
+        $this->em->flush();
+    }
+
+    /**
+     * @param TranslationValue[] $translationValues
+     */
+    public function deleteValues(array $translationValues): void
+    {
+        /** @var TranslationKey[] $translationKeys */
+        $translationKeys = [];
+
+        foreach ($translationValues as $translationValue) {
+            if (!in_array($translationValue->getKey(), $translationKeys)) {
+                $translationKeys[] = $translationValue->getKey();
+            }
+
+            $this->em->remove($translationValue);
+        }
+
+        $this->em->flush();
+
+        foreach ($translationKeys as $i => $translationKey) {
+            if (0 !== $translationKey->getTranslations()->count()) {
+                unset($translationKeys[$i]);
+            }
+        }
+
+        if (!empty($translationKeys)) {
+            $this->deleteKeys($translationKeys);
+        }
     }
 }
