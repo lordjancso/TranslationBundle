@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services
+        https://symfony.com/schema/dic/services/services-1.0.xsd">
+
+    <services>
+        <service id="lordjancso_translation.command.export_translations" class="Lordjancso\TranslationBundle\Command\ExportTranslationsCommand">
+            <argument type="service" id="lordjancso_translation.service.translation_exporter" />
+            <argument type="service" id="filesystem" />
+            <argument type="string">%kernel.project_dir%</argument>
+            <tag name="console.command" />
+        </service>
+
+        <service id="lordjancso_translation.command.import_translations" class="Lordjancso\TranslationBundle\Command\ImportTranslationsCommand">
+            <argument type="service" id="Lordjancso\TranslationBundle\Service\TranslationManager" />
+            <argument type="service" id="lordjancso_translation.service.translation_importer" />
+            <argument type="string">%kernel.project_dir%</argument>
+            <tag name="console.command" />
+        </service>
+
+        <service id="lordjancso_translation.controller.translations" class="Lordjancso\TranslationBundle\Controller\TranslationController" public="true">
+            <argument type="service" id="Lordjancso\TranslationBundle\Service\TranslationStats" />
+            <argument>%lordjancso_translation.managed_locales%</argument>
+        </service>
+
+        <service id="lordjancso_translation.eventlistener.translation_entity_subscriber" class="Lordjancso\TranslationBundle\EventListener\TranslationEntitySubscriber">
+            <tag name="doctrine.event_subscriber" />
+        </service>
+
+        <service id="lordjancso_translation.service.translation_exporter" class="Lordjancso\TranslationBundle\Service\TranslationExporter">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+        </service>
+
+        <service id="lordjancso_translation.service.translation_importer" class="Lordjancso\TranslationBundle\Service\TranslationImporter">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+        </service>
+
+        <service id="Lordjancso\TranslationBundle\Service\TranslationManager">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument>%lordjancso_translation.managed_locales%</argument>
+        </service>
+
+        <service id="Lordjancso\TranslationBundle\Service\TranslationStats">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+            <argument>%lordjancso_translation.managed_locales%</argument>
+        </service>
+
+        <service id="lordjancso_translation.translation.database_loader" class="Lordjancso\TranslationBundle\Translation\DatabaseLoader">
+            <argument type="service" id="doctrine.orm.entity_manager" />
+            <tag name="translation.loader" alias="ljdb" />
+        </service>
+    </services>
+</container>

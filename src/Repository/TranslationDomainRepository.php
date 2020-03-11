@@ -1,0 +1,36 @@
+<?php
+
+namespace Lordjancso\TranslationBundle\Repository;
+
+use Doctrine\ORM\EntityRepository;
+use Lordjancso\TranslationBundle\Entity\TranslationDomain;
+
+/**
+ * @method TranslationDomain|null find($id, $lockMode = null, $lockVersion = null)
+ * @method TranslationDomain|null findOneBy(array $criteria, array $orderBy = null)
+ * @method TranslationDomain[]    findAll()
+ * @method TranslationDomain[]    findBy(array $criteria, array $orderBy = null, $limit = null, $offset = null)
+ */
+class TranslationDomainRepository extends EntityRepository
+{
+    public function findAllToExport(): array
+    {
+        return $this->createQueryBuilder('td')
+            ->addOrderBy('td.name', 'ASC')
+            ->addOrderBy('td.locale', 'ASC')
+            ->getQuery()
+            ->getArrayResult();
+    }
+
+    public function getAllNames(): array
+    {
+        $translationDomains = $this->createQueryBuilder('td')
+            ->select('td.name')
+            ->addOrderBy('td.name', 'ASC')
+            ->addGroupBy('td.name')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_column($translationDomains, 'name');
+    }
+}

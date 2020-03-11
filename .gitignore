@@ -1,5 +1,6 @@
 /.idea/
 /etc/
+/tests/_output/
 /var/
 /vendor/
 /.*.cache

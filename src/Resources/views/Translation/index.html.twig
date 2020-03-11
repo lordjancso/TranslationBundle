@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Lordjancso TranslationBundle index</title>
+
+    <style type="text/css">
+        table, th, td {
+            border: 1px solid black;
+            border-collapse: collapse;
+            padding: 5px;
+        }
+    </style>
+</head>
+<body>
+    <table>
+        <thead>
+            <tr>
+                <th>domain</th>
+                {% for managedLocale in managedLocales %}
+                    <th>
+                        {{ managedLocale }}
+                    </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for domain, stat in stats %}
+                <tr>
+                    <td>
+                        {{ domain }}
+                    </td>
+                    {% for item in stat %}
+                        {% set color = 'transparent' %}
+
+                        {% if item.percent == 100 %}
+                            {% set color = 'lightgreen' %}
+                        {% elseif item.percent > 50 %}
+                            {% set color = 'yellow' %}
+                        {% else %}
+                            {% set color = 'lightpink' %}
+                        {% endif %}
+
+                        <td style="background-color: {{ color }};">
+                            {{ item.translated }} / {{ item.keys }} ({{ item.percent }}%)
+                        </td>
+                    {% endfor %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
