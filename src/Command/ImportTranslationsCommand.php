@@ -40,7 +40,7 @@ class ImportTranslationsCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        if ('mysql' !== $this->manager->getDatabasePlatformName()) {
+        if (!$this->manager->isDatabasePlatformSupported()) {
             $io->error('The import command can only be executed safely on \'mysql\'.');
 
             return 1;

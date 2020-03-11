@@ -18,9 +18,9 @@ class TranslationManager
         $this->managedLocales = $managedLocales;
     }
 
-    public function getDatabasePlatformName(): string
+    public function isDatabasePlatformSupported(): bool
     {
-        return $this->em->getConnection()->getDatabasePlatform()->getName();
+        return 'mysql' === $this->em->getConnection()->getDatabasePlatform()->getName();
     }
 
     public function getManagedLocales(): array

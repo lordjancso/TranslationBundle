@@ -14,6 +14,8 @@ use Lordjancso\TranslationBundle\Entity\TranslationKey;
  */
 class TranslationKeyRepository extends EntityRepository
 {
+    // export queries
+
     public function findAllToExport(string $domain): array
     {
         return $this->createQueryBuilder('tk')
@@ -24,6 +26,8 @@ class TranslationKeyRepository extends EntityRepository
             ->getQuery()
             ->getArrayResult();
     }
+
+    // import queries
 
     public function insertAndGet(TranslationDomain $translationDomain, array $names, bool $isIgnore = false): array
     {
@@ -62,6 +66,8 @@ class TranslationKeyRepository extends EntityRepository
             return $item['name'];
         }, $dbTranslationKeys);
     }
+
+    // other queries
 
     public function getStats(): array
     {

@@ -25,7 +25,7 @@ class ImportTranslationsCommandTest extends TestCase
 
     public function testExecuteWithNoMysql(): void
     {
-        $commandTester = $this->getCommandTester('pgsql');
+        $commandTester = $this->getCommandTester(false);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('The import command can only be executed safely on \'mysql\'.', $commandTester->getDisplay());
@@ -34,7 +34,7 @@ class ImportTranslationsCommandTest extends TestCase
 
     public function testExecuteNoTranslationFileFound(): void
     {
-        $commandTester = $this->getCommandTester('mysql');
+        $commandTester = $this->getCommandTester(true);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('No translation file found in path', $commandTester->getDisplay());
@@ -45,7 +45,7 @@ class ImportTranslationsCommandTest extends TestCase
     {
         (new Filesystem())->appendToFile(__DIR__.'/../_output/translations/domain.de.yaml', '\'key1\': \'trans1\'');
 
-        $commandTester = $this->getCommandTester('mysql');
+        $commandTester = $this->getCommandTester(true);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('SKIP! Not in managed locales.', $commandTester->getDisplay());
@@ -56,7 +56,7 @@ class ImportTranslationsCommandTest extends TestCase
     {
         (new Filesystem())->appendToFile(__DIR__.'/../_output/translations/domain.en.yaml', '\'key1\': \'trans1\'');
 
-        $commandTester = $this->getCommandTester('mysql');
+        $commandTester = $this->getCommandTester(true);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('SKIP! No changes in the file.', $commandTester->getDisplay());
@@ -83,18 +83,18 @@ class ImportTranslationsCommandTest extends TestCase
         $importer->method('importKeys')
             ->willReturn(['some-key' => 'some-trans']);
 
-        $commandTester = $this->getCommandTester('mysql', $importer);
+        $commandTester = $this->getCommandTester(true, $importer);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('SUCCESS!', $commandTester->getDisplay());
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    private function getCommandTester($platformName, $importer = null): CommandTester
+    private function getCommandTester($isPlatformSupported, $importer = null): CommandTester
     {
         $manager = $this->createMock(TranslationManager::class);
-        $manager->method('getDatabasePlatformName')
-            ->willReturn($platformName);
+        $manager->method('isDatabasePlatformSupported')
+            ->willReturn($isPlatformSupported);
         $manager->method('getManagedLocales')
             ->willReturn(['en']);
 
