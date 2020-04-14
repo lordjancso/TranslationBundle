@@ -55,6 +55,14 @@ class TranslationManager
                     'locale' => $locale,
                 ]);
 
+                if (!$translationDomain instanceof TranslationDomain) {
+                    $translationDomain = (new TranslationDomain())
+                        ->setName($translationKey->getDomain())
+                        ->setLocale($locale);
+
+                    $this->em->persist($translationDomain);
+                }
+
                 $translationValue = (new TranslationValue())
                     ->setDomain($translationDomain)
                     ->setKey($translationKey)
