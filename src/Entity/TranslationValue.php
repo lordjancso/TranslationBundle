@@ -24,7 +24,7 @@ class TranslationValue
     /**
      * @var string
      *
-     * @ORM\Column(name="content", type="string", length=255, nullable=false)
+     * @ORM\Column(name="content", type="string", length=500, nullable=false)
      */
     private $content;
 

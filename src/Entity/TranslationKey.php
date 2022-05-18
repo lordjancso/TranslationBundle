@@ -26,7 +26,7 @@ class TranslationKey
     /**
      * @var string
      *
-     * @ORM\Column(name="name", type="string", length=255, nullable=false, options={"collation":"utf8_bin"})
+     * @ORM\Column(name="name", type="string", length=500, nullable=false, options={"collation":"utf8_bin"})
      */
     private $name;
 
