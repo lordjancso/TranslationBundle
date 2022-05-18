@@ -43,7 +43,7 @@ class ExportTranslationsCommand extends Command
         if (0 === count($translationDomains)) {
             $io->getErrorStyle()->error('No translation found in the database.');
 
-            return 1;
+            return Command::FAILURE;
         }
 
         $this->filesystem->mkdir($exportPath);
@@ -51,7 +51,7 @@ class ExportTranslationsCommand extends Command
         foreach ($translationDomains as $translationDomain) {
             $newTranslations = $this->exporter->exportDomain($translationDomain['id'], $translationDomain['name']);
             $oldTranslations = [];
-            $filename = $exportPath.'/'.$translationDomain['path'];
+            $filename = $exportPath.'/'.($translationDomain['path'] ?: 'translations/'.$translationDomain['name'].'.'.$translationDomain['locale'].'.yaml');
 
             if (!$this->filesystem->exists(pathinfo($filename)['dirname'])) {
                 $this->filesystem->mkdir(pathinfo($filename)['dirname']);
@@ -76,6 +76,6 @@ class ExportTranslationsCommand extends Command
             ]);
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 }
