@@ -33,7 +33,7 @@ class TranslationValue
     #[ORM\JoinColumn(name: 'domain_id', referencedColumnName: 'id', nullable: false)]
     private ?TranslationDomain $domain = null;
 
-    #[ORM\ManyToOne(targetEntity: 'TranslationKey')]
+    #[ORM\ManyToOne(targetEntity: 'TranslationKey', inversedBy: 'translations')]
     #[ORM\JoinColumn(name: 'key_id', referencedColumnName: 'id', nullable: false)]
     private ?TranslationKey $key = null;
 
