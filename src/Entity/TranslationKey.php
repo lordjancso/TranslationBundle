@@ -5,58 +5,37 @@ namespace Lordjancso\TranslationBundle\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Lordjancso\TranslationBundle\Repository\TranslationKeyRepository;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
-/**
- * @ORM\Table(name="lj_translation_keys", uniqueConstraints={@ORM\UniqueConstraint(columns={"name", "domain"})})
- * @ORM\Entity(repositoryClass="Lordjancso\TranslationBundle\Repository\TranslationKeyRepository")
- * @UniqueEntity(fields={"name", "domain"})
- */
+#[ORM\Table(name: 'lj_translation_keys')]
+#[ORM\UniqueConstraint(columns: ['name', 'domain'])]
+#[ORM\Entity(repositoryClass: TranslationKeyRepository::class)]
+#[UniqueEntity(fields: ['name', 'domain'])]
 class TranslationKey
 {
-    /**
-     * @var int
-     *
-     * @ORM\Id()
-     * @ORM\GeneratedValue()
-     * @ORM\Column(name="id", type="integer", nullable=false)
-     */
-    private $id;
+    #[ORM\Column(name: 'id', type: 'integer', nullable: false)]
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
+    private ?int $id = null;
+
+    #[ORM\Column(name: 'name', type: 'string', length: 500, nullable: false, options: ['collation' => 'utf8_bin'])]
+    private ?string $name = null;
+
+    #[ORM\Column(name: 'domain', type: 'string', length: 255, nullable: false)]
+    private ?string $domain = null;
+
+    #[ORM\Column(name: 'created_at', type: 'datetime', nullable: false)]
+    private ?\DateTimeInterface $createdAt = null;
+
+    #[ORM\Column(name: 'updated_at', type: 'datetime', nullable: false)]
+    private ?\DateTimeInterface $updatedAt = null;
 
     /**
-     * @var string
-     *
-     * @ORM\Column(name="name", type="string", length=500, nullable=false, options={"collation":"utf8_bin"})
+     * @var ArrayCollection|TranslationValue[]
      */
-    private $name;
-
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="domain", type="string", length=255, nullable=false)
-     */
-    private $domain;
-
-    /**
-     * @var \DateTimeInterface
-     *
-     * @ORM\Column(name="created_at", type="datetime", nullable=false)
-     */
-    private $createdAt;
-
-    /**
-     * @var \DateTimeInterface
-     *
-     * @ORM\Column(name="updated_at", type="datetime", nullable=false)
-     */
-    private $updatedAt;
-
-    /**
-     * @var TranslationValue[]
-     *
-     * @ORM\OneToMany(targetEntity="TranslationValue", mappedBy="key", cascade={"remove"})
-     */
-    private $translations;
+    #[ORM\OneToMany(mappedBy: 'key', targetEntity: 'TranslationValue', cascade: ['remove'])]
+    private ?Collection $translations;
 
     public function __construct()
     {

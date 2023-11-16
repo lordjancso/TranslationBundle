@@ -5,6 +5,7 @@ namespace Lordjancso\TranslationBundle\Command;
 use Lordjancso\TranslationBundle\Entity\TranslationDomain;
 use Lordjancso\TranslationBundle\Service\TranslationImporter;
 use Lordjancso\TranslationBundle\Service\TranslationManager;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -13,27 +14,23 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
 
+#[AsCommand(
+    name: 'lordjancso:import-translations',
+    description: 'Imports the translations from files to database.'
+)]
 class ImportTranslationsCommand extends Command
 {
-    protected static $defaultName = 'lordjancso:import-translations';
-
-    protected $manager;
-    protected $importer;
-    protected $projectDir;
-
-    public function __construct(TranslationManager $manager, TranslationImporter $importer, string $projectDir)
-    {
-        $this->manager = $manager;
-        $this->importer = $importer;
-        $this->projectDir = $projectDir;
-
+    public function __construct(
+        private readonly TranslationManager $manager,
+        private readonly TranslationImporter $importer,
+        private readonly string $projectDir
+    ) {
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this->setDescription('Imports the translations from files to database.')
-            ->addOption('import-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.', '/translations');
+        $this->addOption('import-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.', '/translations');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int

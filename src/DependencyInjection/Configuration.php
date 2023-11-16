@@ -8,7 +8,7 @@ use Symfony\Component\Config\Definition\Exception\InvalidTypeException;
 
 class Configuration implements ConfigurationInterface
 {
-    public function getConfigTreeBuilder()
+    public function getConfigTreeBuilder(): TreeBuilder
     {
         $treeBuilder = new TreeBuilder('lordjancso_translation');
         $rootNode = $treeBuilder->getRootNode();

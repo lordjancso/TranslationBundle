@@ -10,6 +10,12 @@
 
 [![License](https://poser.pugx.org/lordjancso/translation-bundle/license?format=flat)](https://packagist.org/packages/lordjancso/translation-bundle)
 
+## Tests
+
+```
+./vendor/bin/simple-phpunit
+```
+
 ## Installation
 
 ```

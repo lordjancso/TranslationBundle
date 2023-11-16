@@ -3,67 +3,39 @@
 namespace Lordjancso\TranslationBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Lordjancso\TranslationBundle\Repository\TranslationValueRepository;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
-/**
- * @ORM\Table(name="lj_translation_values", uniqueConstraints={@ORM\UniqueConstraint(columns={"key_id", "locale"})})
- * @ORM\Entity(repositoryClass="Lordjancso\TranslationBundle\Repository\TranslationValueRepository")
- * @UniqueEntity(fields={"key", "locale"})
- */
+#[ORM\Table(name: 'lj_translation_values')]
+#[ORM\UniqueConstraint(columns: ['key_id', 'locale'])]
+#[ORM\Entity(repositoryClass: TranslationValueRepository::class)]
+#[UniqueEntity(fields: ['key', 'locale'])]
 class TranslationValue
 {
-    /**
-     * @var int
-     *
-     * @ORM\Id()
-     * @ORM\GeneratedValue()
-     * @ORM\Column(name="id", type="integer", nullable=false)
-     */
-    private $id;
+    #[ORM\Column(name: 'id', type: 'integer', nullable: false)]
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
+    private ?int $id = null;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="content", type="string", length=500, nullable=false)
-     */
-    private $content;
+    #[ORM\Column(name: 'content', type: 'string', length: 500, nullable: false)]
+    private ?string $content = null;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="locale", type="string", length=255, nullable=false)
-     */
-    private $locale;
+    #[ORM\Column(name: 'locale', type: 'string', length: 255, nullable: false)]
+    private ?string $locale = null;
 
-    /**
-     * @var \DateTimeInterface
-     *
-     * @ORM\Column(name="created_at", type="datetime", nullable=false)
-     */
-    private $createdAt;
+    #[ORM\Column(name: 'created_at', type: 'datetime', nullable: false)]
+    private ?\DateTimeInterface $createdAt = null;
 
-    /**
-     * @var \DateTimeInterface
-     *
-     * @ORM\Column(name="updated_at", type="datetime", nullable=false)
-     */
-    private $updatedAt;
+    #[ORM\Column(name: 'updated_at', type: 'datetime', nullable: false)]
+    private ?\DateTimeInterface $updatedAt = null;
 
-    /**
-     * @var TranslationDomain
-     *
-     * @ORM\ManyToOne(targetEntity="TranslationDomain")
-     * @ORM\JoinColumn(name="domain_id", referencedColumnName="id", nullable=false)
-     */
-    private $domain;
+    #[ORM\ManyToOne(targetEntity: 'TranslationDomain')]
+    #[ORM\JoinColumn(name: 'domain_id', referencedColumnName: 'id', nullable: false)]
+    private ?TranslationDomain $domain = null;
 
-    /**
-     * @var TranslationKey
-     *
-     * @ORM\ManyToOne(targetEntity="TranslationKey", inversedBy="translations")
-     * @ORM\JoinColumn(name="key_id", referencedColumnName="id", nullable=false)
-     */
-    private $key;
+    #[ORM\ManyToOne(targetEntity: 'TranslationKey')]
+    #[ORM\JoinColumn(name: 'key_id', referencedColumnName: 'id', nullable: false)]
+    private ?TranslationKey $key = null;
 
     public function getId(): ?int
     {

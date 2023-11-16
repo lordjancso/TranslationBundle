@@ -18,30 +18,6 @@ class TranslationExporterTest extends TestCase
      */
     protected $em;
 
-    public function testGetDomains(): void
-    {
-        $service = new TranslationExporter($this->em);
-
-        $this->assertSame([
-            [
-                'id' => 1,
-                'name' => 'domain1',
-                'locale' => 'en',
-                'path' => 'some/path/to/file.yaml',
-                'hash' => 'iddqd',
-            ],
-        ], $service->getDomains());
-    }
-
-    public function testExportDomain(): void
-    {
-        $service = new TranslationExporter($this->em);
-
-        $this->assertSame([
-            'key1' => 'Key 1 translation',
-        ], $service->exportDomain(1, 'domain1'));
-    }
-
     protected function setUp(): void
     {
         $translationDomainRepository = $this->createMock(TranslationDomainRepository::class);
@@ -88,5 +64,29 @@ class TranslationExporterTest extends TestCase
             });
 
         $this->em = $entityManager;
+    }
+
+    public function testGetDomains(): void
+    {
+        $service = new TranslationExporter($this->em);
+
+        $this->assertSame([
+            [
+                'id' => 1,
+                'name' => 'domain1',
+                'locale' => 'en',
+                'path' => 'some/path/to/file.yaml',
+                'hash' => 'iddqd',
+            ],
+        ], $service->getDomains());
+    }
+
+    public function testExportDomain(): void
+    {
+        $service = new TranslationExporter($this->em);
+
+        $this->assertSame([
+            'key1' => 'Key 1 translation',
+        ], $service->exportDomain(1, 'domain1'));
     }
 }

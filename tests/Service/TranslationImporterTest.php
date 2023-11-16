@@ -12,6 +12,11 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class TranslationImporterTest extends TestCase
 {
+    /**
+     * @var EntityManagerInterface
+     */
+    protected $em;
+
     public static function setUpBeforeClass(): void
     {
         (new Filesystem())->mkdir(__DIR__.'/../_output/translations');
@@ -24,10 +29,46 @@ class TranslationImporterTest extends TestCase
         (new Filesystem())->remove(__DIR__.'/../_output');
     }
 
-    /**
-     * @var EntityManagerInterface
-     */
-    protected $em;
+    protected function setUp(): void
+    {
+        $translationDomainRepository = $this->createMock(TranslationDomainRepository::class);
+        $translationDomainRepository->method('findOneBy')
+            ->willReturnCallback(function ($criterias) {
+                $existing = [
+                    'name' => 'existing-domain',
+                    'locale' => 'en',
+                    'path' => __DIR__.'/../_output/translations/existing-domain.en.yaml',
+                ];
+
+                if ($criterias === $existing) {
+                    return (new TranslationDomain())
+                        ->setName('existing-domain')
+                        ->setLocale('en')
+                        ->setPath(__DIR__.'/../_output/translations/existing-domain.en.yaml')
+                        ->setHash('d41d8cd98f00b204e9800998ecf8427e');
+                } else {
+                    return null;
+                }
+            });
+
+        $translationKeyRepository = $this->createMock(TranslationKeyRepository::class);
+        $translationKeyRepository->method('getAllToImport')
+            ->willReturn(['name']);
+        $translationKeyRepository->method('insertAndGet')
+            ->willReturn(['new']);
+
+        $entityManager = $this->createMock(EntityManagerInterface::class);
+        $entityManager->method('getRepository')
+            ->willReturnCallback(function ($class) use ($translationDomainRepository, $translationKeyRepository) {
+                if (TranslationDomain::class === $class) {
+                    return $translationDomainRepository;
+                } else {
+                    return $translationKeyRepository;
+                }
+            });
+
+        $this->em = $entityManager;
+    }
 
     /**
      * @dataProvider importDomainDataProvider
@@ -90,46 +131,5 @@ class TranslationImporterTest extends TestCase
                 ],
             ],
         ];
-    }
-
-    protected function setUp(): void
-    {
-        $translationDomainRepository = $this->createMock(TranslationDomainRepository::class);
-        $translationDomainRepository->method('findOneBy')
-            ->willReturnCallback(function ($criterias) {
-                $existing = [
-                    'name' => 'existing-domain',
-                    'locale' => 'en',
-                    'path' => __DIR__.'/../_output/translations/existing-domain.en.yaml',
-                ];
-
-                if ($criterias === $existing) {
-                    return (new TranslationDomain())
-                        ->setName('existing-domain')
-                        ->setLocale('en')
-                        ->setPath(__DIR__.'/../_output/translations/existing-domain.en.yaml')
-                        ->setHash('d41d8cd98f00b204e9800998ecf8427e');
-                } else {
-                    return null;
-                }
-            });
-
-        $translationKeyRepository = $this->createMock(TranslationKeyRepository::class);
-        $translationKeyRepository->method('getAllToImport')
-            ->willReturn(['name']);
-        $translationKeyRepository->method('insertAndGet')
-            ->willReturn(['new']);
-
-        $entityManager = $this->createMock(EntityManagerInterface::class);
-        $entityManager->method('getRepository')
-            ->willReturnCallback(function ($class) use ($translationDomainRepository, $translationKeyRepository) {
-                if (TranslationDomain::class === $class) {
-                    return $translationDomainRepository;
-                } else {
-                    return $translationKeyRepository;
-                }
-            });
-
-        $this->em = $entityManager;
     }
 }

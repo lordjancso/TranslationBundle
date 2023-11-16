@@ -16,9 +16,6 @@ class DatabaseLoader implements LoaderInterface
         $this->em = $em;
     }
 
-    /**
-     * {@inheritdoc}
-     */
     public function load(mixed $resource, string $locale, string $domain = 'messages'): MessageCatalogue
     {
         $catalogue = new MessageCatalogue($locale);
