@@ -24,10 +24,6 @@
             <argument>%lordjancso_translation.managed_locales%</argument>
         </service>
 
-        <service id="lordjancso_translation.eventlistener.translation_entity_subscriber" class="Lordjancso\TranslationBundle\EventListener\TranslationEntitySubscriber">
-            <tag name="doctrine.event_subscriber" />
-        </service>
-
         <service id="lordjancso_translation.service.translation_exporter" class="Lordjancso\TranslationBundle\Service\TranslationExporter">
             <argument type="service" id="doctrine.orm.entity_manager" />
         </service>

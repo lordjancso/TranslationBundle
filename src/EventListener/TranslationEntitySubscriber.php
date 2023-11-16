@@ -2,26 +2,20 @@
 
 namespace Lordjancso\TranslationBundle\EventListener;
 
-use Doctrine\Common\EventSubscriber;
-use Doctrine\ORM\Event\LifecycleEventArgs;
+use Doctrine\Bundle\DoctrineBundle\Attribute\AsDoctrineListener;
+use Doctrine\ORM\Event\PrePersistEventArgs;
 use Doctrine\ORM\Event\PreUpdateEventArgs;
 use Doctrine\ORM\Events;
 use Lordjancso\TranslationBundle\Entity\TranslationKey;
 use Lordjancso\TranslationBundle\Entity\TranslationValue;
 
-class TranslationEntitySubscriber implements EventSubscriber
+#[AsDoctrineListener(event: Events::prePersist)]
+#[AsDoctrineListener(event: Events::preUpdate)]
+class TranslationEntitySubscriber
 {
-    public function getSubscribedEvents()
+    public function prePersist(PrePersistEventArgs $eventArgs): void
     {
-        return [
-            Events::prePersist,
-            Events::preUpdate,
-        ];
-    }
-
-    public function prePersist(LifecycleEventArgs $eventArgs): void
-    {
-        $entity = $eventArgs->getEntity();
+        $entity = $eventArgs->getObject();
 
         if (!$entity instanceof TranslationKey && !$entity instanceof TranslationValue) {
             return;
@@ -33,7 +27,7 @@ class TranslationEntitySubscriber implements EventSubscriber
 
     public function preUpdate(PreUpdateEventArgs $eventArgs): void
     {
-        $entity = $eventArgs->getEntity();
+        $entity = $eventArgs->getObject();
 
         if (!$entity instanceof TranslationKey && !$entity instanceof TranslationValue) {
             return;
