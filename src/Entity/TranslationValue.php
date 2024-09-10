@@ -7,9 +7,9 @@ use Lordjancso\TranslationBundle\Repository\TranslationValueRepository;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Table(name: 'lj_translation_values')]
-#[ORM\UniqueConstraint(columns: ['domain_id', 'key_id', 'locale'])]
+#[ORM\UniqueConstraint(columns: ['key_id', 'locale'])]
 #[ORM\Entity(repositoryClass: TranslationValueRepository::class)]
-#[UniqueEntity(fields: ['domain', 'key', 'locale'])]
+#[UniqueEntity(fields: ['key', 'locale'])]
 class TranslationValue
 {
     #[ORM\Column(name: 'id', type: 'integer', nullable: false)]
