@@ -72,6 +72,14 @@ class ExportTranslationsCommandTest extends TestCase
 
     public function testExecuteWithLocalTranslations(): void
     {
+        // Create existing translation file
+        $dir = __DIR__.'/../_output/dummy';
+        (new Filesystem())->mkdir($dir);
+        file_put_contents($dir.'/domain1.en.yaml', Yaml::dump([
+            'key1' => 'Value1',
+            'key2' => 'Value2',
+        ]));
+
         $exporter = $this->createMock(TranslationExporter::class);
         $exporter->method('getDomains')
             ->willReturn([
