@@ -28,7 +28,7 @@ class ExportTranslationsCommand extends Command
 
     protected function configure(): void
     {
-        $this->addOption('export-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.');
+        $this->addOption('export-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.', '');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
