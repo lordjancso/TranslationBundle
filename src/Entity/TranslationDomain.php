@@ -3,51 +3,31 @@
 namespace Lordjancso\TranslationBundle\Entity;
 
 use Doctrine\ORM\Mapping as ORM;
+use Lordjancso\TranslationBundle\Repository\TranslationDomainRepository;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
-/**
- * @ORM\Table(name="lj_translation_domains", uniqueConstraints={@ORM\UniqueConstraint(columns={"name", "locale"})})
- * @ORM\Entity(repositoryClass="Lordjancso\TranslationBundle\Repository\TranslationDomainRepository")
- * @UniqueEntity(fields={"name", "locale"})
- */
+#[ORM\Table(name: 'lj_translation_domains')]
+#[ORM\UniqueConstraint(columns: ['name', 'locale'])]
+#[ORM\Entity(repositoryClass: TranslationDomainRepository::class)]
+#[UniqueEntity(fields: ['name', 'locale'])]
 class TranslationDomain
 {
-    /**
-     * @var int
-     *
-     * @ORM\Id()
-     * @ORM\GeneratedValue()
-     * @ORM\Column(name="id", type="integer", nullable=false)
-     */
-    private $id;
+    #[ORM\Column(name: 'id', type: 'integer', nullable: false)]
+    #[ORM\Id]
+    #[ORM\GeneratedValue(strategy: 'IDENTITY')]
+    private ?int $id = null;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="name", type="string", length=255, nullable=false)
-     */
-    private $name;
+    #[ORM\Column(name: 'name', type: 'string', length: 255, nullable: false)]
+    private ?string $name = null;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="locale", type="string", length=255, nullable=false)
-     */
-    private $locale;
+    #[ORM\Column(name: 'locale', type: 'string', length: 255, nullable: false)]
+    private ?string $locale = null;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="path", type="string", length=255, nullable=true)
-     */
-    private $path;
+    #[ORM\Column(name: 'path', type: 'string', length: 255, nullable: true)]
+    private ?string $path = null;
 
-    /**
-     * @var string
-     *
-     * @ORM\Column(name="hash", type="string", length=255, nullable=true)
-     */
-    private $hash;
+    #[ORM\Column(name: 'hash', type: 'string', length: 255, nullable: true)]
+    private ?string $hash = null;
 
     public function getId(): ?int
     {

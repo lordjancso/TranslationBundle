@@ -53,7 +53,7 @@ class ExportTranslationsCommandTest extends TestCase
                 'key2' => 'Value2',
             ]);
 
-        $this->assertFileNotExists(__DIR__.'/../_output/dummy/domain1.en.yaml');
+        $this->assertFileDoesNotExist(__DIR__.'/../_output/dummy/domain1.en.yaml');
 
         $commandTester = $this->getCommandTester($exporter);
         $commandTester->execute([]);

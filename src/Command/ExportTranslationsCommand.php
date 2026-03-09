@@ -3,6 +3,7 @@
 namespace Lordjancso\TranslationBundle\Command;
 
 use Lordjancso\TranslationBundle\Service\TranslationExporter;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -11,27 +12,23 @@ use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Yaml\Yaml;
 
+#[AsCommand(
+    name: 'lordjancso:export-translations',
+    description: 'Exports the translations from database to files.'
+)]
 class ExportTranslationsCommand extends Command
 {
-    protected static $defaultName = 'lordjancso:export-translations';
-
-    protected $exporter;
-    protected $filesystem;
-    protected $projectDir;
-
-    public function __construct(TranslationExporter $exporter, Filesystem $filesystem, string $projectDir)
-    {
-        $this->exporter = $exporter;
-        $this->filesystem = $filesystem;
-        $this->projectDir = $projectDir;
-
+    public function __construct(
+        private readonly TranslationExporter $exporter,
+        private readonly Filesystem $filesystem,
+        private readonly string $projectDir
+    ) {
         parent::__construct();
     }
 
     protected function configure(): void
     {
-        $this->setDescription('Exports the translations from database to files.')
-            ->addOption('export-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.');
+        $this->addOption('export-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -43,7 +40,7 @@ class ExportTranslationsCommand extends Command
         if (0 === count($translationDomains)) {
             $io->getErrorStyle()->error('No translation found in the database.');
 
-            return 1;
+            return Command::FAILURE;
         }
 
         $this->filesystem->mkdir($exportPath);
@@ -51,7 +48,7 @@ class ExportTranslationsCommand extends Command
         foreach ($translationDomains as $translationDomain) {
             $newTranslations = $this->exporter->exportDomain($translationDomain['id'], $translationDomain['name']);
             $oldTranslations = [];
-            $filename = $exportPath.'/'.$translationDomain['path'];
+            $filename = $exportPath.'/'.($translationDomain['path'] ?: 'translations/'.$translationDomain['name'].'.'.$translationDomain['locale'].'.yaml');
 
             if (!$this->filesystem->exists(pathinfo($filename)['dirname'])) {
                 $this->filesystem->mkdir(pathinfo($filename)['dirname']);
@@ -76,6 +73,6 @@ class ExportTranslationsCommand extends Command
             ]);
         }
 
-        return 0;
+        return Command::SUCCESS;
     }
 }
