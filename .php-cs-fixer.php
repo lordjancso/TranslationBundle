@@ -16,11 +16,7 @@ $finder = PhpCsFixer\Finder::create()
     ->notPath('#(^|/)_.+(/|$)#')
     ->in(__DIR__);
 
-$cacheDir = getenv('TRAVIS')
-    ? getenv('HOME').'/.php-cs-fixer'
-    : __DIR__;
-
 return (new PhpCsFixer\Config())
-    ->setCacheFile($cacheDir.'/.php-cs-fixer.cache')
+    ->setCacheFile(__DIR__.'/.php-cs-fixer.cache')
     ->setRules($rules)
     ->setFinder($finder);
