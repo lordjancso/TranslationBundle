@@ -46,7 +46,7 @@ class TranslationKeyRepository extends EntityRepository
 
         $sql = 'INSERT '.$ignore.' INTO lj_translation_keys (name, domain, created_at, updated_at) VALUES ('.implode('),(', $names).') '.$onDuplicate;
 
-        $this->_em->getConnection()->executeQuery($sql);
+        $this->_em->getConnection()->executeStatement($sql);
 
         return $this->getAllToImport($translationDomain);
     }

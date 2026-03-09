@@ -9,11 +9,9 @@ use Symfony\Component\Translation\MessageCatalogue;
 
 class DatabaseLoader implements LoaderInterface
 {
-    protected $em;
-
-    public function __construct(EntityManagerInterface $em)
-    {
-        $this->em = $em;
+    public function __construct(
+        protected EntityManagerInterface $em,
+    ) {
     }
 
     public function load(mixed $resource, string $locale, string $domain = 'messages'): MessageCatalogue

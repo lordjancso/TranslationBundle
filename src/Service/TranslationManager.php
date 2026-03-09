@@ -9,13 +9,10 @@ use Lordjancso\TranslationBundle\Entity\TranslationValue;
 
 class TranslationManager
 {
-    protected $em;
-    protected $managedLocales;
-
-    public function __construct(EntityManagerInterface $em, array $managedLocales)
-    {
-        $this->em = $em;
-        $this->managedLocales = $managedLocales;
+    public function __construct(
+        protected EntityManagerInterface $em,
+        protected array $managedLocales,
+    ) {
     }
 
     public function isDatabasePlatformSupported(): bool
