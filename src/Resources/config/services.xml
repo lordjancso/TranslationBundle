@@ -25,8 +25,10 @@
         </service>
 
         <service id="lordjancso_translation.event_listener.translation_entity_listener" class="Lordjancso\TranslationBundle\EventListener\TranslationEntityListener">
-            <tag name="doctrine.event_listener" event="prePersist" />
-            <tag name="doctrine.event_listener" event="preUpdate" />
+            <tag name="doctrine.orm.entity_listener" entity="Lordjancso\TranslationBundle\Entity\TranslationKey" event="prePersist" />
+            <tag name="doctrine.orm.entity_listener" entity="Lordjancso\TranslationBundle\Entity\TranslationKey" event="preUpdate" />
+            <tag name="doctrine.orm.entity_listener" entity="Lordjancso\TranslationBundle\Entity\TranslationValue" event="prePersist" />
+            <tag name="doctrine.orm.entity_listener" entity="Lordjancso\TranslationBundle\Entity\TranslationValue" event="preUpdate" />
         </service>
 
         <service id="lordjancso_translation.service.translation_exporter" class="Lordjancso\TranslationBundle\Service\TranslationExporter">
