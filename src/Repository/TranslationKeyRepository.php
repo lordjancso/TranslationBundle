@@ -14,19 +14,6 @@ use Lordjancso\TranslationBundle\Entity\TranslationKey;
  */
 class TranslationKeyRepository extends EntityRepository
 {
-    // export queries
-
-    public function findAllToExport(string $domain): array
-    {
-        return $this->createQueryBuilder('tk')
-            ->select('tk.id', 'tk.name')
-            ->andWhere('tk.domain = :domain')
-            ->setParameter('domain', $domain)
-            ->addOrderBy('tk.name', 'ASC')
-            ->getQuery()
-            ->getArrayResult();
-    }
-
     // import queries
 
     public function insertAndGet(TranslationDomain $translationDomain, array $names, bool $isIgnore = false): array

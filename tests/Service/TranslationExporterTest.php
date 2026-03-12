@@ -4,9 +4,7 @@ namespace Lordjancso\TranslationBundle\Tests\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Lordjancso\TranslationBundle\Entity\TranslationDomain;
-use Lordjancso\TranslationBundle\Entity\TranslationKey;
 use Lordjancso\TranslationBundle\Repository\TranslationDomainRepository;
-use Lordjancso\TranslationBundle\Repository\TranslationKeyRepository;
 use Lordjancso\TranslationBundle\Repository\TranslationValueRepository;
 use Lordjancso\TranslationBundle\Service\TranslationExporter;
 use PHPUnit\Framework\TestCase;
@@ -32,32 +30,21 @@ class TranslationExporterTest extends TestCase
                 ],
             ]);
 
-        $translationKeyRepository = $this->createMock(TranslationKeyRepository::class);
-        $translationKeyRepository->method('findAllToExport')
-            ->with('domain1')
-            ->willReturn([
-                [
-                    'id' => 1,
-                    'name' => 'key1',
-                ],
-            ]);
-
         $translationValueRepository = $this->createMock(TranslationValueRepository::class);
-        $translationValueRepository->method('findAllToExport')
-            ->with(1, 1)
+        $translationValueRepository->method('getAllByDomainAndLocale')
+            ->with('domain1', 'en')
             ->willReturn([
                 [
+                    'key' => 'key1',
                     'content' => 'Key 1 translation',
                 ],
             ]);
 
         $entityManager = $this->createMock(EntityManagerInterface::class);
         $entityManager->method('getRepository')
-            ->willReturnCallback(function ($class) use ($translationDomainRepository, $translationKeyRepository, $translationValueRepository) {
+            ->willReturnCallback(function ($class) use ($translationDomainRepository, $translationValueRepository) {
                 if (TranslationDomain::class === $class) {
                     return $translationDomainRepository;
-                } elseif (TranslationKey::class === $class) {
-                    return $translationKeyRepository;
                 } else {
                     return $translationValueRepository;
                 }
@@ -87,6 +74,6 @@ class TranslationExporterTest extends TestCase
 
         $this->assertSame([
             'key1' => 'Key 1 translation',
-        ], $service->exportDomain(1, 'domain1'));
+        ], $service->exportDomain('domain1', 'en'));
     }
 }
