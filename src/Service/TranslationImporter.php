@@ -14,24 +14,24 @@ class TranslationImporter
     ) {
     }
 
-    public function importDomain(string $domain, string $locale, string $path): ?TranslationDomain
+    public function importDomain(string $domain, string $locale, string $path, string $absolutePath): ?TranslationDomain
     {
         $translationDomain = $this->em->getRepository(TranslationDomain::class)->findOneBy([
             'name' => $domain,
             'locale' => $locale,
-            'path' => $path,
         ]);
 
         if (!$translationDomain instanceof TranslationDomain) {
             $translationDomain = (new TranslationDomain())
                 ->setName($domain)
-                ->setLocale($locale)
-                ->setPath($path);
+                ->setLocale($locale);
 
             $this->em->persist($translationDomain);
         }
 
-        $hash = hash_file('md5', $path);
+        $translationDomain->setPath($path);
+
+        $hash = hash_file('md5', $absolutePath);
 
         if ($hash === $translationDomain->getHash()) {
             return null;
