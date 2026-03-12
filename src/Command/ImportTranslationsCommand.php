@@ -88,7 +88,7 @@ class ImportTranslationsCommand extends Command
         // TODO
         // delete empty translation chains
 
-        return 0;
+        return Command::SUCCESS;
     }
 
     protected function importTranslationDomain(string $domain, string $locale, string $relativePath, string $absolutePath): array
