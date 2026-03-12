@@ -37,7 +37,6 @@ class TranslationImporterTest extends TestCase
                 $existing = [
                     'name' => 'existing-domain',
                     'locale' => 'en',
-                    'path' => __DIR__.'/../_output/translations/existing-domain.en.yaml',
                 ];
 
                 if ($criterias === $existing) {
@@ -73,11 +72,11 @@ class TranslationImporterTest extends TestCase
     /**
      * @dataProvider importDomainDataProvider
      */
-    public function testImportDomain($expected, $domain, $locale, $path): void
+    public function testImportDomain($expected, $domain, $locale, $path, $absolutePath): void
     {
         $service = new TranslationImporter($this->em);
 
-        $this->assertEquals($expected, $service->importDomain($domain, $locale, $path));
+        $this->assertEquals($expected, $service->importDomain($domain, $locale, $path, $absolutePath));
     }
 
     public function importDomainDataProvider()
@@ -87,16 +86,18 @@ class TranslationImporterTest extends TestCase
                 null,
                 'existing-domain',
                 'en',
+                'translations/existing-domain.en.yaml',
                 __DIR__.'/../_output/translations/existing-domain.en.yaml',
             ],
             'New translation domain' => [
                 (new TranslationDomain())
                     ->setName('new-domain')
                     ->setLocale('en')
-                    ->setPath(__DIR__.'/../_output/translations/new-domain.en.yaml')
+                    ->setPath('translations/new-domain.en.yaml')
                     ->setHash('d41d8cd98f00b204e9800998ecf8427e'),
                 'new-domain',
                 'en',
+                'translations/new-domain.en.yaml',
                 __DIR__.'/../_output/translations/new-domain.en.yaml',
             ],
         ];
