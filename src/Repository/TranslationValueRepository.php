@@ -23,7 +23,7 @@ class TranslationValueRepository extends EntityRepository
             ->andWhere('tv.key IN (:translationKeys)')
             ->setParameter('translationKeys', $translationKeys)
             ->getQuery()
-            ->executeQuery();
+            ->execute();
     }
 
     public function getAllByDomainAndLocale(string $domain, string $locale): array
