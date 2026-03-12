@@ -31,7 +31,7 @@ class TranslationPass implements CompilerPassInterface
         foreach ($finder as $file) {
             [$domain, $locale, $extension] = explode('.', $file->getFilename());
 
-            if (!in_array($domain, $domains)) {
+            if (!in_array($domain, $domains, true)) {
                 $domains[] = $domain;
             }
         }
