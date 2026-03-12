@@ -4,7 +4,6 @@ namespace Lordjancso\TranslationBundle\Service;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Lordjancso\TranslationBundle\Entity\TranslationDomain;
-use Lordjancso\TranslationBundle\Entity\TranslationKey;
 use Lordjancso\TranslationBundle\Entity\TranslationValue;
 
 class TranslationExporter
@@ -19,17 +18,14 @@ class TranslationExporter
         return $this->em->getRepository(TranslationDomain::class)->findAllToExport();
     }
 
-    public function exportDomain(int $domainId, string $domainName): array
+    public function exportDomain(string $domainName, string $locale): array
     {
+        $rows = $this->em->getRepository(TranslationValue::class)->getAllByDomainAndLocale($domainName, $locale);
+
         $translations = [];
-        $keys = $this->em->getRepository(TranslationKey::class)->findAllToExport($domainName);
 
-        foreach ($keys as $key) {
-            $values = $this->em->getRepository(TranslationValue::class)->findAllToExport($domainId, $key['id']);
-
-            foreach ($values as $value) {
-                $translations[$key['name']] = $value['content'];
-            }
+        foreach ($rows as $row) {
+            $translations[$row['key']] = $row['content'];
         }
 
         return $translations;

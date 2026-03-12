@@ -14,18 +14,6 @@ use Lordjancso\TranslationBundle\Entity\TranslationValue;
  */
 class TranslationValueRepository extends EntityRepository
 {
-    public function findAllToExport(int $domainId, int $keyId): array
-    {
-        return $this->createQueryBuilder('tv')
-            ->select('tv.content')
-            ->andWhere('tv.domain = :domain')
-            ->setParameter('domain', $domainId)
-            ->andWhere('tv.key = :key')
-            ->setParameter('key', $keyId)
-            ->getQuery()
-            ->getArrayResult();
-    }
-
     public function deleteAllByDomainAndKey(TranslationDomain $translationDomain, array $translationKeys)
     {
         return $this->createQueryBuilder('tv')
@@ -35,7 +23,7 @@ class TranslationValueRepository extends EntityRepository
             ->andWhere('tv.key IN (:translationKeys)')
             ->setParameter('translationKeys', $translationKeys)
             ->getQuery()
-            ->executeQuery();
+            ->execute();
     }
 
     public function getAllByDomainAndLocale(string $domain, string $locale): array
