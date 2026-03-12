@@ -48,20 +48,10 @@ class TranslationImporter
     {
         $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->getAllToImport($translationDomain);
 
-        $yamlTranslationKeys = array_keys($yaml);
-        $newTranslationKeys = array_diff($yamlTranslationKeys, $dbTranslationKeys);
-        $newTranslationKeyNames = [];
+        $newTranslationKeys = array_diff(array_keys($yaml), $dbTranslationKeys);
 
-        foreach ($yaml as $keyName => $content) {
-            if (!in_array($keyName, $newTranslationKeys, true)) {
-                continue;
-            }
-
-            $newTranslationKeyNames[] = $keyName;
-        }
-
-        if (!empty($newTranslationKeyNames)) {
-            $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->insertAndGet($translationDomain, $newTranslationKeyNames);
+        if (!empty($newTranslationKeys)) {
+            $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->insertAndGet($translationDomain, array_values($newTranslationKeys));
         }
 
         return $dbTranslationKeys;
