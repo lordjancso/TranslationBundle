@@ -4,19 +4,17 @@ namespace Lordjancso\TranslationBundle\Controller;
 
 use Lordjancso\TranslationBundle\Service\TranslationStats;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\HttpFoundation\Response;
 
 class TranslationController extends AbstractController
 {
-    protected $stats;
-    protected $managedLocales;
-
-    public function __construct(TranslationStats $stats, array $managedLocales)
-    {
-        $this->stats = $stats;
-        $this->managedLocales = $managedLocales;
+    public function __construct(
+        protected TranslationStats $stats,
+        protected array $managedLocales,
+    ) {
     }
 
-    public function index()
+    public function index(): Response
     {
         return $this->render('@LordjancsoTranslation/Translation/index.html.twig', [
             'managedLocales' => $this->managedLocales,

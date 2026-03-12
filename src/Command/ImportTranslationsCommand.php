@@ -23,7 +23,7 @@ class ImportTranslationsCommand extends Command
     public function __construct(
         private readonly TranslationManager $manager,
         private readonly TranslationImporter $importer,
-        private readonly string $projectDir
+        private readonly string $projectDir,
     ) {
         parent::__construct();
     }
@@ -40,7 +40,7 @@ class ImportTranslationsCommand extends Command
         if (!$this->manager->isDatabasePlatformSupported()) {
             $io->error('The import command can only be executed safely on \'mysql\'.');
 
-            return 1;
+            return Command::FAILURE;
         }
 
         $importPath = $input->getOption('import-path');
@@ -61,14 +61,14 @@ class ImportTranslationsCommand extends Command
         if (!$finder->hasResults()) {
             $io->getErrorStyle()->error("No translation file found in path '{$importPath}'.");
 
-            return 1;
+            return Command::FAILURE;
         }
 
         foreach ($finder as $file) {
             $io->write("Importing {$file->getRealPath()}... ");
 
             $relativePath = str_replace($this->projectDir.'/', '', $file->getRealPath());
-            list($domain, $locale) = explode('.', $file->getFilename());
+            [$domain, $locale] = explode('.', $file->getFilename());
 
             if (!in_array($locale, $this->manager->getManagedLocales(), true)) {
                 $io->writeln('<comment>SKIP! Not in managed locales.</comment>');

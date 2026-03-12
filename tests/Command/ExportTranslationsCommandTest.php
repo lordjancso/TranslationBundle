@@ -5,7 +5,6 @@ namespace Lordjancso\TranslationBundle\Tests\Service;
 use Lordjancso\TranslationBundle\Command\ExportTranslationsCommand;
 use Lordjancso\TranslationBundle\Service\TranslationExporter;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Yaml\Yaml;
@@ -72,6 +71,14 @@ class ExportTranslationsCommandTest extends TestCase
 
     public function testExecuteWithLocalTranslations(): void
     {
+        // Create existing translation file
+        $dir = __DIR__.'/../_output/dummy';
+        (new Filesystem())->mkdir($dir);
+        file_put_contents($dir.'/domain1.en.yaml', Yaml::dump([
+            'key1' => 'Value1',
+            'key2' => 'Value2',
+        ]));
+
         $exporter = $this->createMock(TranslationExporter::class);
         $exporter->method('getDomains')
             ->willReturn([
@@ -108,10 +115,7 @@ class ExportTranslationsCommandTest extends TestCase
 
     private function getCommandTester($exporter): CommandTester
     {
-        $application = new Application();
-        $application->add(new ExportTranslationsCommand($exporter, new Filesystem(), __DIR__.'/../_output'));
-        $command = $application->find('lordjancso:export-translations');
-        $command->setApplication($application);
+        $command = new ExportTranslationsCommand($exporter, new Filesystem(), __DIR__.'/../_output');
 
         return new CommandTester($command);
     }

@@ -24,7 +24,7 @@ class TranslationPass implements CompilerPassInterface
             ->sortByName();
 
         foreach ($finder as $file) {
-            list($domain, $locale, $extension) = explode('.', $file->getFilename());
+            [$domain, $locale, $extension] = explode('.', $file->getFilename());
 
             if (!in_array($domain, $domains)) {
                 $domains[] = $domain;

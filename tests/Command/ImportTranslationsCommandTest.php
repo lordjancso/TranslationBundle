@@ -7,7 +7,6 @@ use Lordjancso\TranslationBundle\Entity\TranslationDomain;
 use Lordjancso\TranslationBundle\Service\TranslationImporter;
 use Lordjancso\TranslationBundle\Service\TranslationManager;
 use PHPUnit\Framework\TestCase;
-use Symfony\Component\Console\Application;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Filesystem\Filesystem;
 
@@ -105,10 +104,7 @@ class ImportTranslationsCommandTest extends TestCase
         $importer->method('importValues')
             ->willReturn(true);
 
-        $application = new Application();
-        $application->add(new ImportTranslationsCommand($manager, $importer, __DIR__.'/../_output'));
-        $command = $application->find('lordjancso:import-translations');
-        $command->setApplication($application);
+        $command = new ImportTranslationsCommand($manager, $importer, __DIR__.'/../_output');
 
         return new CommandTester($command);
     }
