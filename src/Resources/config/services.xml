@@ -21,6 +21,7 @@
 
         <service id="lordjancso_translation.controller.translations" class="Lordjancso\TranslationBundle\Controller\TranslationController" public="true">
             <argument type="service" id="Lordjancso\TranslationBundle\Service\TranslationStats" />
+            <argument type="service" id="twig" />
             <argument>%lordjancso_translation.managed_locales%</argument>
         </service>
 

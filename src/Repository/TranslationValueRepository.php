@@ -60,4 +60,22 @@ class TranslationValueRepository extends EntityRepository
 
         return $stats;
     }
+
+    public function getAllStats(): array
+    {
+        $items = $this->createQueryBuilder('tv')
+            ->select('tk.domain, tv.locale, COUNT(DISTINCT tv.id) AS count')
+            ->innerJoin('tv.key', 'tk')
+            ->groupBy('tk.domain, tv.locale')
+            ->getQuery()
+            ->getResult();
+
+        $stats = [];
+
+        foreach ($items as $item) {
+            $stats[$item['domain']][$item['locale']] = (int) $item['count'];
+        }
+
+        return $stats;
+    }
 }

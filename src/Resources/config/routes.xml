@@ -5,6 +5,6 @@
         https://symfony.com/schema/routing/routing-1.0.xsd">
 
     <route id="lordjancso_translation_index" path="/"
-           controller="lordjancso_translation.controller.translations:index"
+           controller="lordjancso_translation.controller.translations::index"
            methods="GET" />
 </routes>

@@ -24,6 +24,9 @@
     "require-dev": {
         "symfony/phpunit-bridge": "^6.4 || ^7.4 || ^8.0"
     },
+    "suggest": {
+        "twig/twig": "Required for the translation stats UI controller"
+    },
     "config": {
         "sort-packages": true
     },
