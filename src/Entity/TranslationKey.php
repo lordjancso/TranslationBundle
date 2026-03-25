@@ -5,12 +5,14 @@ namespace Lordjancso\TranslationBundle\Entity;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
+use Lordjancso\TranslationBundle\EventListener\TranslationEntityListener;
 use Lordjancso\TranslationBundle\Repository\TranslationKeyRepository;
 use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 
 #[ORM\Table(name: 'lj_translation_keys')]
 #[ORM\UniqueConstraint(columns: ['name', 'domain'])]
 #[ORM\Entity(repositoryClass: TranslationKeyRepository::class)]
+#[ORM\EntityListeners([TranslationEntityListener::class])]
 #[UniqueEntity(fields: ['name', 'domain'])]
 class TranslationKey
 {
