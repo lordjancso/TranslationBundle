@@ -1,6 +1,6 @@
 <?php
 
-namespace Lordjancso\TranslationBundle\Tests\Service;
+namespace Lordjancso\TranslationBundle\Tests\Command;
 
 use Lordjancso\TranslationBundle\Command\ImportTranslationsCommand;
 use Lordjancso\TranslationBundle\Entity\TranslationDomain;
@@ -12,100 +12,153 @@ use Symfony\Component\Filesystem\Filesystem;
 
 class ImportTranslationsCommandTest extends TestCase
 {
-    public static function setUpBeforeClass(): void
+    private const OUTPUT_DIR = __DIR__.'/../_output';
+
+    private Filesystem $filesystem;
+
+    protected function setUp(): void
     {
-        (new Filesystem())->mkdir(__DIR__.'/../_output/translations');
+        $this->filesystem = new Filesystem();
+        $this->filesystem->remove(self::OUTPUT_DIR);
+        $this->filesystem->mkdir(self::OUTPUT_DIR.'/translations');
     }
 
-    public static function tearDownAfterClass(): void
+    protected function tearDown(): void
     {
-        (new Filesystem())->remove(__DIR__.'/../_output');
+        $this->filesystem->remove(self::OUTPUT_DIR);
     }
 
-    public function testExecuteWithNoMysql(): void
+    public function testFailsWhenNotMysql(): void
     {
-        $commandTester = $this->getCommandTester(false);
+        $commandTester = $this->createCommandTester(false);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('The import command can only be executed safely on \'mysql\'.', $commandTester->getDisplay());
         $this->assertEquals(1, $commandTester->getStatusCode());
     }
 
-    public function testExecuteNoTranslationFileFound(): void
+    public function testFailsWhenNoFilesFound(): void
     {
-        $commandTester = $this->getCommandTester(true);
+        $commandTester = $this->createCommandTester(true);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('No translation file found in path', $commandTester->getDisplay());
         $this->assertEquals(1, $commandTester->getStatusCode());
     }
 
-    public function testExecuteNotInManagedLocales(): void
+    public function testSkipsLocaleNotInManagedLocales(): void
     {
-        (new Filesystem())->appendToFile(__DIR__.'/../_output/translations/domain.de.yaml', '\'key1\': \'trans1\'');
+        $this->createYamlFile('domain.de.yaml', "'key1': 'trans1'");
 
-        $commandTester = $this->getCommandTester(true);
+        $commandTester = $this->createCommandTester(true);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('SKIP! Not in managed locales.', $commandTester->getDisplay());
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    public function testExecuteNoChanges(): void
+    public function testSkipsWhenNoChanges(): void
     {
-        (new Filesystem())->appendToFile(__DIR__.'/../_output/translations/domain.en.yaml', '\'key1\': \'trans1\'');
+        $this->createYamlFile('domain.en.yaml', "'key1': 'trans1'");
 
-        $commandTester = $this->getCommandTester(true);
+        $commandTester = $this->createCommandTester(true);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('SKIP! No changes in the file.', $commandTester->getDisplay());
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    public function testExecuteSuccess(): void
+    public function testImportsSuccessfully(): void
     {
+        $this->createYamlFile('domain.en.yaml', "'key1': 'trans1'");
+
         $importer = $this->createMock(TranslationImporter::class);
         $importer->method('importDomain')
             ->willReturnCallback(function () {
-                $translationDomain = $this->createMock(TranslationDomain::class);
-                $translationDomain->method('getId')
-                    ->willReturn(1);
-                $translationDomain->method('getName')
-                    ->willReturn('domain');
-                $translationDomain->method('getLocale')
-                    ->willReturn('en');
-                $translationDomain->method('getPath')
-                    ->willReturn('x');
+                $domain = $this->createMock(TranslationDomain::class);
+                $domain->method('getId')->willReturn(1);
 
-                return $translationDomain;
+                return $domain;
             });
         $importer->method('importKeys')
             ->willReturn(['some-key' => 'some-trans']);
+        $importer->method('importValues')
+            ->willReturn(true);
 
-        $commandTester = $this->getCommandTester(true, $importer);
+        $commandTester = $this->createCommandTester(true, $importer);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('SUCCESS!', $commandTester->getDisplay());
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    private function getCommandTester($isPlatformSupported, $importer = null): CommandTester
+    public function testConfirmationWhenTablesNotEmpty(): void
+    {
+        $this->createYamlFile('domain.en.yaml', "'key1': 'trans1'");
+
+        $commandTester = $this->createCommandTester(true, null, false);
+        $commandTester->setInputs(['no']);
+        $commandTester->execute([]);
+
+        $this->assertStringContainsString('Translation tables are not empty', $commandTester->getDisplay());
+        $this->assertStringContainsString('Import cancelled.', $commandTester->getDisplay());
+    }
+
+    public function testForceSkipsConfirmation(): void
+    {
+        $this->createYamlFile('domain.en.yaml', "'key1': 'trans1'");
+
+        $commandTester = $this->createCommandTester(true, null, false);
+        $commandTester->execute(['--force' => true]);
+
+        $this->assertStringNotContainsString('Translation tables are not empty', $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
+    }
+
+    public function testTruncateOption(): void
+    {
+        $this->createYamlFile('domain.en.yaml', "'key1': 'trans1'");
+
+        $manager = $this->createMock(TranslationManager::class);
+        $manager->method('isDatabasePlatformSupported')->willReturn(true);
+        $manager->method('getManagedLocales')->willReturn(['en']);
+        $manager->expects($this->once())->method('truncate');
+        $importer = $this->createMock(TranslationImporter::class);
+        $importer->method('importDomain')
+            ->willReturnCallback(function () {
+                $domain = $this->createMock(TranslationDomain::class);
+                $domain->method('getId')->willReturn(1);
+
+                return $domain;
+            });
+        $importer->method('importKeys')->willReturn([]);
+        $importer->method('importValues')->willReturn(true);
+
+        $command = new ImportTranslationsCommand($manager, $importer, self::OUTPUT_DIR);
+        $commandTester = new CommandTester($command);
+        $commandTester->execute(['--truncate' => true]);
+
+        $this->assertStringContainsString('All translation tables truncated.', $commandTester->getDisplay());
+        $this->assertEquals(0, $commandTester->getStatusCode());
+    }
+
+    private function createCommandTester(bool $isPlatformSupported, ?TranslationImporter $importer = null, bool $tablesEmpty = true): CommandTester
     {
         $manager = $this->createMock(TranslationManager::class);
-        $manager->method('isDatabasePlatformSupported')
-            ->willReturn($isPlatformSupported);
-        $manager->method('getManagedLocales')
-            ->willReturn(['en']);
+        $manager->method('isDatabasePlatformSupported')->willReturn($isPlatformSupported);
+        $manager->method('getManagedLocales')->willReturn(['en']);
+        $manager->method('isTablesEmpty')->willReturn($tablesEmpty);
 
         if (null === $importer) {
             $importer = $this->createMock(TranslationImporter::class);
+            $importer->method('importValues')->willReturn(true);
         }
 
-        $importer->method('importValues')
-            ->willReturn(true);
+        return new CommandTester(new ImportTranslationsCommand($manager, $importer, self::OUTPUT_DIR));
+    }
 
-        $command = new ImportTranslationsCommand($manager, $importer, __DIR__.'/../_output');
-
-        return new CommandTester($command);
+    private function createYamlFile(string $filename, string $content): void
+    {
+        file_put_contents(self::OUTPUT_DIR.'/translations/'.$filename, $content);
     }
 }

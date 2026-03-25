@@ -57,26 +57,30 @@ class TranslationImporter
         return $dbTranslationKeys;
     }
 
-    public function importValues(int $domainId, string $locale, array $contentsAndKeyIds): bool
+    public function importValues(int $domainId, string $locale, array $contentsAndKeyIds, int $batchSize = 500): bool
     {
-        $placeholders = [];
-        $params = [];
-        $i = 0;
+        $batches = array_chunk($contentsAndKeyIds, $batchSize, true);
 
-        foreach ($contentsAndKeyIds as $keyId => $content) {
-            $placeholders[] = "(:content_{$i}, :locale_{$i}, :domain_id_{$i}, :key_id_{$i}, NOW(), NOW())";
-            $params["content_{$i}"] = $content;
-            $params["locale_{$i}"] = $locale;
-            $params["domain_id_{$i}"] = $domainId;
-            $params["key_id_{$i}"] = $keyId;
-            ++$i;
+        foreach ($batches as $batch) {
+            $placeholders = [];
+            $params = [];
+            $i = 0;
+
+            foreach ($batch as $keyId => $content) {
+                $placeholders[] = "(:content_{$i}, :locale_{$i}, :domain_id_{$i}, :key_id_{$i}, NOW(), NOW())";
+                $params["content_{$i}"] = $content;
+                $params["locale_{$i}"] = $locale;
+                $params["domain_id_{$i}"] = $domainId;
+                $params["key_id_{$i}"] = $keyId;
+                ++$i;
+            }
+
+            $sql = 'INSERT INTO lj_translation_values (content, locale, domain_id, key_id, created_at, updated_at) VALUES ';
+            $sql .= implode(',', $placeholders);
+            $sql .= ' ON DUPLICATE KEY UPDATE content = VALUES(content), updated_at = VALUES(updated_at)';
+
+            $this->em->getConnection()->executeStatement($sql, $params);
         }
-
-        $sql = 'INSERT INTO lj_translation_values (content, locale, domain_id, key_id, created_at, updated_at) VALUES ';
-        $sql .= implode(',', $placeholders);
-        $sql .= ' ON DUPLICATE KEY UPDATE content = VALUES(content), updated_at = VALUES(updated_at)';
-
-        $this->em->getConnection()->executeStatement($sql, $params);
 
         return true;
     }

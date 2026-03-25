@@ -46,6 +46,10 @@ class ConfigurationTest extends TestCase
                 ],
                 [
                     'managed_locales' => ['dk', 'de', 'en'],
+                    'extract' => [
+                        'translations_dir' => 'translations',
+                        'exclude_domains' => [],
+                    ],
                 ],
             ],
         ];
