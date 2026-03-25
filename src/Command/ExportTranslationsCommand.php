@@ -46,7 +46,7 @@ class ExportTranslationsCommand extends Command
         $this->filesystem->mkdir($exportPath);
 
         foreach ($translationDomains as $translationDomain) {
-            $newTranslations = $this->exporter->exportDomain($translationDomain['id'], $translationDomain['name']);
+            $newTranslations = $this->exporter->exportDomain($translationDomain['name'], $translationDomain['locale']);
             $oldTranslations = [];
             $filename = $exportPath.'/'.($translationDomain['path'] ?: 'translations/'.$translationDomain['name'].'.'.$translationDomain['locale'].'.yaml');
 
@@ -63,7 +63,7 @@ class ExportTranslationsCommand extends Command
 
             if (0 < count($translations)) {
                 $yaml = Yaml::dump($translations);
-                file_put_contents($filename, $yaml);
+                $this->filesystem->dumpFile($filename, $yaml);
             }
 
             $io->listing([

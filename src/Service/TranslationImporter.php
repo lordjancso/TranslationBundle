@@ -14,24 +14,24 @@ class TranslationImporter
     ) {
     }
 
-    public function importDomain(string $domain, string $locale, string $path): ?TranslationDomain
+    public function importDomain(string $domain, string $locale, string $path, string $absolutePath): ?TranslationDomain
     {
         $translationDomain = $this->em->getRepository(TranslationDomain::class)->findOneBy([
             'name' => $domain,
             'locale' => $locale,
-            'path' => $path,
         ]);
 
         if (!$translationDomain instanceof TranslationDomain) {
             $translationDomain = (new TranslationDomain())
                 ->setName($domain)
-                ->setLocale($locale)
-                ->setPath($path);
+                ->setLocale($locale);
 
             $this->em->persist($translationDomain);
         }
 
-        $hash = hash_file('md5', $path);
+        $translationDomain->setPath($path);
+
+        $hash = hash_file('md5', $absolutePath);
 
         if ($hash === $translationDomain->getHash()) {
             return null;
@@ -48,20 +48,10 @@ class TranslationImporter
     {
         $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->getAllToImport($translationDomain);
 
-        $yamlTranslationKeys = array_keys($yaml);
-        $newTranslationKeys = array_diff($yamlTranslationKeys, $dbTranslationKeys);
-        $newTranslationKeyNames = [];
+        $newTranslationKeys = array_diff(array_keys($yaml), $dbTranslationKeys);
 
-        foreach ($yaml as $keyName => $content) {
-            if (!in_array($keyName, $newTranslationKeys, true)) {
-                continue;
-            }
-
-            $newTranslationKeyNames[] = $keyName;
-        }
-
-        if (!empty($newTranslationKeyNames)) {
-            $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->insertAndGet($translationDomain, $newTranslationKeyNames);
+        if (!empty($newTranslationKeys)) {
+            $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->insertAndGet($translationDomain, array_values($newTranslationKeys));
         }
 
         return $dbTranslationKeys;
@@ -69,24 +59,24 @@ class TranslationImporter
 
     public function importValues(int $domainId, string $locale, array $contentsAndKeyIds): bool
     {
-        $data = [];
+        $placeholders = [];
+        $params = [];
+        $i = 0;
 
         foreach ($contentsAndKeyIds as $keyId => $content) {
-            $data[] = implode(',', [
-                '\''.addslashes($content).'\'',
-                '\''.$locale.'\'',
-                $domainId,
-                $keyId,
-                'NOW()',
-                'NOW()',
-            ]);
+            $placeholders[] = "(:content_{$i}, :locale_{$i}, :domain_id_{$i}, :key_id_{$i}, NOW(), NOW())";
+            $params["content_{$i}"] = $content;
+            $params["locale_{$i}"] = $locale;
+            $params["domain_id_{$i}"] = $domainId;
+            $params["key_id_{$i}"] = $keyId;
+            ++$i;
         }
 
-        $sql = 'INSERT INTO lj_translation_values (content, locale, domain_id, key_id, created_at, updated_at) VALUES (';
-        $sql .= implode('),(', $data).') ';
-        $sql .= 'ON DUPLICATE KEY UPDATE content = VALUES(content), updated_at = VALUES(updated_at)';
+        $sql = 'INSERT INTO lj_translation_values (content, locale, domain_id, key_id, created_at, updated_at) VALUES ';
+        $sql .= implode(',', $placeholders);
+        $sql .= ' ON DUPLICATE KEY UPDATE content = VALUES(content), updated_at = VALUES(updated_at)';
 
-        $this->em->getConnection()->executeStatement($sql);
+        $this->em->getConnection()->executeStatement($sql, $params);
 
         return true;
     }
