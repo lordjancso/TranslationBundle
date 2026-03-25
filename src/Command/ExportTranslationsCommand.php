@@ -10,6 +10,7 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Filesystem\Filesystem;
+use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
 
 #[AsCommand(
@@ -28,7 +29,10 @@ class ExportTranslationsCommand extends Command
 
     protected function configure(): void
     {
-        $this->addOption('export-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.', '');
+        $this
+            ->addOption('export-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.', '')
+            ->addOption('clean', null, InputOption::VALUE_NONE, 'Delete all existing YAML translation files before exporting.')
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -41,6 +45,10 @@ class ExportTranslationsCommand extends Command
             $io->getErrorStyle()->error('No translation found in the database.');
 
             return Command::FAILURE;
+        }
+
+        if ($input->getOption('clean')) {
+            $this->cleanTranslationsDir($exportPath.'/translations', $io);
         }
 
         $this->filesystem->mkdir($exportPath);
@@ -74,5 +82,27 @@ class ExportTranslationsCommand extends Command
         }
 
         return Command::SUCCESS;
+    }
+
+    private function cleanTranslationsDir(string $translationsDir, SymfonyStyle $io): void
+    {
+        if (!$this->filesystem->exists($translationsDir)) {
+            return;
+        }
+
+        $finder = new Finder();
+        $finder->files()->in($translationsDir)->name('*.yaml');
+
+        $count = $finder->count();
+
+        if (0 === $count) {
+            return;
+        }
+
+        foreach ($finder as $file) {
+            $this->filesystem->remove($file->getRealPath());
+        }
+
+        $io->comment(sprintf('Deleted %d YAML file(s) from %s.', $count, $translationsDir));
     }
 }
