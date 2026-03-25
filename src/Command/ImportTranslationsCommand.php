@@ -76,7 +76,7 @@ class ImportTranslationsCommand extends Command
                 continue;
             }
 
-            $result = $this->importTranslationDomain($domain, $locale, $relativePath);
+            $result = $this->importTranslationDomain($domain, $locale, $relativePath, $file->getRealPath());
 
             if ('no_changes' === $result['status']) {
                 $io->writeln('<comment>SKIP! No changes in the file.</comment>');
@@ -88,14 +88,14 @@ class ImportTranslationsCommand extends Command
         // TODO
         // delete empty translation chains
 
-        return 0;
+        return Command::SUCCESS;
     }
 
-    protected function importTranslationDomain(string $domain, string $locale, string $relativePath): array
+    protected function importTranslationDomain(string $domain, string $locale, string $relativePath, string $absolutePath): array
     {
         // manage TranslationDomain
 
-        $translationDomain = $this->importer->importDomain($domain, $locale, $relativePath);
+        $translationDomain = $this->importer->importDomain($domain, $locale, $relativePath, $absolutePath);
 
         if (!$translationDomain instanceof TranslationDomain) {
             return [
@@ -105,7 +105,7 @@ class ImportTranslationsCommand extends Command
 
         // manage TranslationKey
 
-        $yaml = Yaml::parseFile($relativePath);
+        $yaml = Yaml::parseFile($absolutePath);
         $dbTranslationKeys = $this->importer->importKeys($translationDomain, $yaml);
 
         // manage TranslationValue

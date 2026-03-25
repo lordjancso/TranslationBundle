@@ -15,18 +15,23 @@ class TranslationPass implements CompilerPassInterface
         $locales = $container->getParameter('lordjancso_translation.managed_locales');
 
         $domains = [];
+        $translationsDir = $container->getParameter('kernel.project_dir').'/translations';
+
+        if (!is_dir($translationsDir)) {
+            return;
+        }
 
         $finder = new Finder();
         $finder
             ->files()
-            ->in($container->getParameter('kernel.project_dir').'/translations')
+            ->in($translationsDir)
             ->name('*.*.yaml')
             ->sortByName();
 
         foreach ($finder as $file) {
             [$domain, $locale, $extension] = explode('.', $file->getFilename());
 
-            if (!in_array($domain, $domains)) {
+            if (!in_array($domain, $domains, true)) {
                 $domains[] = $domain;
             }
         }
