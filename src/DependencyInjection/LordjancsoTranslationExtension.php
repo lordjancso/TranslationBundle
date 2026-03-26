@@ -19,5 +19,9 @@ class LordjancsoTranslationExtension extends Extension
 
         sort($config['managed_locales']);
         $container->setParameter('lordjancso_translation.managed_locales', $config['managed_locales']);
+
+        $extractConfig = $config['extract'];
+        $container->setParameter('lordjancso_translation.extract.translations_dir', $extractConfig['translations_dir']);
+        $container->setParameter('lordjancso_translation.extract.exclude_domains', $extractConfig['exclude_domains']);
     }
 }

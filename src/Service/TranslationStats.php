@@ -9,8 +9,8 @@ use Lordjancso\TranslationBundle\Entity\TranslationValue;
 class TranslationStats
 {
     public function __construct(
-        protected EntityManagerInterface $em,
-        protected array $managedLocales,
+        private readonly EntityManagerInterface $em,
+        private readonly array $managedLocales,
     ) {
     }
 
@@ -18,18 +18,18 @@ class TranslationStats
     {
         $stats = [];
         $keyStats = $this->em->getRepository(TranslationKey::class)->getStats();
+        $allValueStats = $this->em->getRepository(TranslationValue::class)->getAllStats();
 
         foreach ($keyStats as $domain => $keyCount) {
             $stat = [];
-            $valueStats = $this->em->getRepository(TranslationValue::class)->getStats($domain);
 
             foreach ($this->managedLocales as $locale) {
-                $translated = $valueStats[$locale] ?? 0;
+                $translated = $allValueStats[$domain][$locale] ?? 0;
 
                 $stat[$locale] = [
                     'keys' => $keyCount,
                     'translated' => $translated,
-                    'percent' => $keyCount > 0 ? floor($translated / $keyCount * 100) : 0,
+                    'percent' => $keyCount > 0 ? (int) floor($translated / $keyCount * 100) : 0,
                 ];
             }
 

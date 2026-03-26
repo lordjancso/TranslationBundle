@@ -3,6 +3,7 @@
 namespace Lordjancso\TranslationBundle\Command;
 
 use Lordjancso\TranslationBundle\Service\TranslationExporter;
+use Lordjancso\TranslationBundle\Service\TranslationFileManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -20,6 +21,7 @@ class ExportTranslationsCommand extends Command
 {
     public function __construct(
         private readonly TranslationExporter $exporter,
+        private readonly TranslationFileManager $fileManager,
         private readonly Filesystem $filesystem,
         private readonly string $projectDir,
     ) {
@@ -28,7 +30,10 @@ class ExportTranslationsCommand extends Command
 
     protected function configure(): void
     {
-        $this->addOption('export-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.', '');
+        $this
+            ->addOption('export-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.', '')
+            ->addOption('reset-files', null, InputOption::VALUE_NONE, 'Delete all existing YAML translation files before exporting.')
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -41,6 +46,14 @@ class ExportTranslationsCommand extends Command
             $io->getErrorStyle()->error('No translation found in the database.');
 
             return Command::FAILURE;
+        }
+
+        if ($input->getOption('reset-files')) {
+            $count = $this->fileManager->resetFiles();
+
+            if ($count > 0) {
+                $io->comment(sprintf('Deleted %d YAML file(s).', $count));
+            }
         }
 
         $this->filesystem->mkdir($exportPath);
@@ -58,7 +71,13 @@ class ExportTranslationsCommand extends Command
                 $oldTranslations = Yaml::parseFile($filename) ?: [];
             }
 
-            $translations = array_merge($oldTranslations, $newTranslations);
+            if (!empty($oldTranslations)) {
+                // File exists: only update values for existing keys
+                $translations = array_merge($oldTranslations, array_intersect_key($newTranslations, $oldTranslations));
+            } else {
+                // File does not exist: write all DB translations
+                $translations = $newTranslations;
+            }
             ksort($translations);
 
             if (0 < count($translations)) {

@@ -30,7 +30,12 @@ class ImportTranslationsCommand extends Command
 
     protected function configure(): void
     {
-        $this->addOption('import-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.', '/translations');
+        $this
+            ->addOption('import-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.', '/translations')
+            ->addOption('truncate', null, InputOption::VALUE_NONE, 'Truncate all translation tables before importing.')
+            ->addOption('force', 'f', InputOption::VALUE_NONE, 'Import without confirmation even if tables are not empty.')
+            ->addOption('batch-size', null, InputOption::VALUE_REQUIRED, 'Number of rows per INSERT batch.', 500)
+        ;
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -41,6 +46,19 @@ class ImportTranslationsCommand extends Command
             $io->error('The import command can only be executed safely on \'mysql\'.');
 
             return Command::FAILURE;
+        }
+
+        if ($input->getOption('truncate')) {
+            $this->manager->truncate();
+            $io->comment('All translation tables truncated.');
+        } elseif (!$this->manager->isTablesEmpty()) {
+            if (!$input->getOption('force')) {
+                if (!$io->confirm('Translation tables are not empty. Continue importing?', false)) {
+                    $io->warning('Import cancelled.');
+
+                    return Command::SUCCESS;
+                }
+            }
         }
 
         $importPath = $input->getOption('import-path');
@@ -64,34 +82,41 @@ class ImportTranslationsCommand extends Command
             return Command::FAILURE;
         }
 
-        foreach ($finder as $file) {
-            $io->write("Importing {$file->getRealPath()}... ");
+        $this->manager->beginTransaction();
 
-            $relativePath = str_replace($this->projectDir.'/', '', $file->getRealPath());
-            [$domain, $locale] = explode('.', $file->getFilename());
+        try {
+            foreach ($finder as $file) {
+                $io->write("Importing {$file->getRealPath()}... ");
 
-            if (!in_array($locale, $this->manager->getManagedLocales(), true)) {
-                $io->writeln('<comment>SKIP! Not in managed locales.</comment>');
+                $relativePath = str_replace($this->projectDir.'/', '', $file->getRealPath());
+                [$domain, $locale] = explode('.', $file->getFilename());
 
-                continue;
+                if (!in_array($locale, $this->manager->getManagedLocales(), true)) {
+                    $io->writeln('<comment>SKIP! Not in managed locales.</comment>');
+
+                    continue;
+                }
+
+                $result = $this->importTranslationDomain($domain, $locale, $relativePath, $file->getRealPath(), (int) $input->getOption('batch-size'));
+
+                if ('no_changes' === $result['status']) {
+                    $io->writeln('<comment>SKIP! No changes in the file.</comment>');
+                } elseif ('success' === $result['status']) {
+                    $io->writeln("<info>SUCCESS! {$result['modify']} modified, {$result['delete']} deleted.</info>");
+                }
             }
 
-            $result = $this->importTranslationDomain($domain, $locale, $relativePath, $file->getRealPath());
+            $this->manager->commit();
+        } catch (\Throwable $e) {
+            $this->manager->rollBack();
 
-            if ('no_changes' === $result['status']) {
-                $io->writeln('<comment>SKIP! No changes in the file.</comment>');
-            } elseif ('success' === $result['status']) {
-                $io->writeln("<info>SUCCESS! {$result['modify']} modified, {$result['delete']} deleted.</info>");
-            }
+            throw $e;
         }
-
-        // TODO
-        // delete empty translation chains
 
         return Command::SUCCESS;
     }
 
-    protected function importTranslationDomain(string $domain, string $locale, string $relativePath, string $absolutePath): array
+    protected function importTranslationDomain(string $domain, string $locale, string $relativePath, string $absolutePath, int $batchSize): array
     {
         // manage TranslationDomain
 
@@ -120,7 +145,7 @@ class ImportTranslationsCommand extends Command
         }
 
         if (!empty($contentsAndKeyIds)) {
-            $this->importer->importValues($translationDomain->getId(), $locale, $contentsAndKeyIds);
+            $this->importer->importValues($translationDomain->getId(), $locale, $contentsAndKeyIds, $batchSize);
         }
 
         if (!empty($dbTranslationKeys)) {

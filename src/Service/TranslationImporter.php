@@ -46,9 +46,11 @@ class TranslationImporter
 
     public function importKeys(TranslationDomain $translationDomain, array $yaml): array
     {
+        $normalizedKeys = array_map(fn ($key) => \Normalizer::normalize((string) $key, \Normalizer::FORM_C), array_keys($yaml));
+
         $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->getAllToImport($translationDomain);
 
-        $newTranslationKeys = array_diff(array_keys($yaml), $dbTranslationKeys);
+        $newTranslationKeys = array_diff($normalizedKeys, $dbTranslationKeys);
 
         if (!empty($newTranslationKeys)) {
             $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->insertAndGet($translationDomain, array_values($newTranslationKeys));
@@ -57,26 +59,30 @@ class TranslationImporter
         return $dbTranslationKeys;
     }
 
-    public function importValues(int $domainId, string $locale, array $contentsAndKeyIds): bool
+    public function importValues(int $domainId, string $locale, array $contentsAndKeyIds, int $batchSize = 500): bool
     {
-        $placeholders = [];
-        $params = [];
-        $i = 0;
+        $batches = array_chunk($contentsAndKeyIds, $batchSize, true);
 
-        foreach ($contentsAndKeyIds as $keyId => $content) {
-            $placeholders[] = "(:content_{$i}, :locale_{$i}, :domain_id_{$i}, :key_id_{$i}, NOW(), NOW())";
-            $params["content_{$i}"] = $content;
-            $params["locale_{$i}"] = $locale;
-            $params["domain_id_{$i}"] = $domainId;
-            $params["key_id_{$i}"] = $keyId;
-            ++$i;
+        foreach ($batches as $batch) {
+            $placeholders = [];
+            $params = [];
+            $i = 0;
+
+            foreach ($batch as $keyId => $content) {
+                $placeholders[] = "(:content_{$i}, :locale_{$i}, :domain_id_{$i}, :key_id_{$i}, NOW(), NOW())";
+                $params["content_{$i}"] = \Normalizer::normalize((string) $content, \Normalizer::FORM_C);
+                $params["locale_{$i}"] = $locale;
+                $params["domain_id_{$i}"] = $domainId;
+                $params["key_id_{$i}"] = $keyId;
+                ++$i;
+            }
+
+            $sql = 'INSERT INTO lj_translation_values (content, locale, domain_id, key_id, created_at, updated_at) VALUES ';
+            $sql .= implode(',', $placeholders);
+            $sql .= ' ON DUPLICATE KEY UPDATE content = VALUES(content), updated_at = VALUES(updated_at)';
+
+            $this->em->getConnection()->executeStatement($sql, $params);
         }
-
-        $sql = 'INSERT INTO lj_translation_values (content, locale, domain_id, key_id, created_at, updated_at) VALUES ';
-        $sql .= implode(',', $placeholders);
-        $sql .= ' ON DUPLICATE KEY UPDATE content = VALUES(content), updated_at = VALUES(updated_at)';
-
-        $this->em->getConnection()->executeStatement($sql, $params);
 
         return true;
     }

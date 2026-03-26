@@ -15,6 +15,32 @@ class TranslationManager
     ) {
     }
 
+    public function beginTransaction(): void
+    {
+        $this->em->getConnection()->beginTransaction();
+    }
+
+    public function commit(): void
+    {
+        $this->em->getConnection()->commit();
+    }
+
+    public function rollBack(): void
+    {
+        $this->em->getConnection()->rollBack();
+    }
+
+    public function isTablesEmpty(): bool
+    {
+        $conn = $this->em->getConnection();
+
+        $count = (int) $conn->fetchOne('SELECT COUNT(*) FROM lj_translation_values')
+            + (int) $conn->fetchOne('SELECT COUNT(*) FROM lj_translation_keys')
+            + (int) $conn->fetchOne('SELECT COUNT(*) FROM lj_translation_domains');
+
+        return 0 === $count;
+    }
+
     public function isDatabasePlatformSupported(): bool
     {
         return 'mysql' === $this->em->getConnection()->getDatabasePlatform()->getName();
@@ -23,6 +49,21 @@ class TranslationManager
     public function getManagedLocales(): array
     {
         return $this->managedLocales;
+    }
+
+    public function truncate(): void
+    {
+        $conn = $this->em->getConnection();
+
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS = 0');
+        $conn->executeStatement('TRUNCATE TABLE lj_translation_values');
+        $conn->executeStatement('TRUNCATE TABLE lj_translation_keys');
+        $conn->executeStatement('TRUNCATE TABLE lj_translation_domains');
+        $conn->executeStatement('SET FOREIGN_KEY_CHECKS = 1');
+
+        if (!$this->isTablesEmpty()) {
+            throw new \RuntimeException('Truncation failed: translation tables are not empty.');
+        }
     }
 
     public function getAllDomainNames(): array

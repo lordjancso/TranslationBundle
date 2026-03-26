@@ -25,7 +25,10 @@ composer require lordjancso/translation-bundle
 # config/packages/lordjancso_translation.yaml
 
 lordjancso_translation:
-    managed_locales: ['en', 'fr', 'de']
+    managed_locales: ['en', 'fr', 'de']    # required
+    extract:
+        translations_dir: 'translations'    # default: 'translations'
+        exclude_domains: []                 # default: []
 ```
 
 Optionally you can add a route to check your translation progress.
@@ -46,21 +49,33 @@ php bin/console doctrine:schema:update --force
 
 ## Usage
 
+### Extract
+
+Extract translation keys from your source code into YAML files.
+
+```bash
+php bin/console lordjancso:extract-translations hu
+```
+
+### Export
+
+Export translations from the database to YAML files.
+
+```bash
+php bin/console lordjancso:export-translations
+```
+
 ### Import
 
-Create your translation files in the `translations/` folder and run the import command.
+Import YAML translation files into the database.
 
 ```bash
 php bin/console lordjancso:import-translations
 ```
 
-### Export
+### Translation stats UI
 
-If your translations changed in the database, export them back to files.
-
-```bash
-php bin/console lordjancso:export-translations
-```
+If you added the route, visit `/lordjancso-translation` to see a translation coverage overview per domain and locale.
 
 ## Testing
 

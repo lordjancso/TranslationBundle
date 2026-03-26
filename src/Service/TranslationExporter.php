@@ -25,7 +25,8 @@ class TranslationExporter
         $translations = [];
 
         foreach ($rows as $row) {
-            $translations[$row['key']] = $row['content'];
+            $key = \Normalizer::normalize($row['key'], \Normalizer::FORM_C);
+            $translations[$key] = \Normalizer::normalize($row['content'], \Normalizer::FORM_C);
         }
 
         return $translations;

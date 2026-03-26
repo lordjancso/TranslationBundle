@@ -31,6 +31,18 @@ class Configuration implements ConfigurationInterface
                     ->end()
                     ->scalarPrototype()->end()
                 ->end()
+                ->arrayNode('extract')
+                    ->addDefaultsIfNotSet()
+                    ->children()
+                        ->scalarNode('translations_dir')
+                            ->defaultValue('translations')
+                        ->end()
+                        ->arrayNode('exclude_domains')
+                            ->scalarPrototype()->end()
+                            ->defaultValue([])
+                        ->end()
+                    ->end()
+                ->end()
             ->end()
         ;
 

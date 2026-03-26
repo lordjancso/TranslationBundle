@@ -1,9 +1,10 @@
 <?php
 
-namespace Lordjancso\TranslationBundle\Tests\Service;
+namespace Lordjancso\TranslationBundle\Tests\Command;
 
 use Lordjancso\TranslationBundle\Command\ExportTranslationsCommand;
 use Lordjancso\TranslationBundle\Service\TranslationExporter;
+use Lordjancso\TranslationBundle\Service\TranslationFileManager;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Filesystem\Filesystem;
@@ -11,112 +12,175 @@ use Symfony\Component\Yaml\Yaml;
 
 class ExportTranslationsCommandTest extends TestCase
 {
-    public static function setUpBeforeClass(): void
+    private const OUTPUT_DIR = __DIR__.'/../_output';
+
+    private Filesystem $filesystem;
+
+    protected function setUp(): void
     {
-        (new Filesystem())->remove(__DIR__.'/../_output');
+        $this->filesystem = new Filesystem();
+        $this->filesystem->remove(self::OUTPUT_DIR);
     }
 
-    public static function tearDownAfterClass(): void
+    protected function tearDown(): void
     {
-        (new Filesystem())->remove(__DIR__.'/../_output');
+        $this->filesystem->remove(self::OUTPUT_DIR);
     }
 
-    public function testExecuteWithNoDomains(): void
+    public function testFailsWhenNoDomains(): void
     {
         $exporter = $this->createMock(TranslationExporter::class);
-        $exporter->method('getDomains')
-            ->willReturn([]);
+        $exporter->method('getDomains')->willReturn([]);
 
-        $commandTester = $this->getCommandTester($exporter);
+        $commandTester = $this->createCommandTester($exporter);
         $commandTester->execute([]);
 
         $this->assertStringContainsString('No translation found in the database.', $commandTester->getDisplay());
         $this->assertEquals(1, $commandTester->getStatusCode());
     }
 
-    public function testExecuteWithoutLocalTranslations(): void
+    public function testExportsToNewFile(): void
     {
-        $exporter = $this->createMock(TranslationExporter::class);
-        $exporter->method('getDomains')
-            ->willReturn([
-                [
-                    'id' => 1,
-                    'name' => 'domain1',
-                    'locale' => 'en',
-                    'path' => 'dummy/domain1.en.yaml',
-                ],
-            ]);
-        $exporter->method('exportDomain')
-            ->willReturn([
-                'key1' => 'Value1',
-                'key2' => 'Value2',
-            ]);
+        $exporter = $this->mockExporter(
+            [['id' => 1, 'name' => 'messages', 'locale' => 'en', 'path' => null]],
+            ['key_b' => 'Value B', 'key_a' => 'Value A']
+        );
 
-        $this->assertFileDoesNotExist(__DIR__.'/../_output/dummy/domain1.en.yaml');
-
-        $commandTester = $this->getCommandTester($exporter);
+        $commandTester = $this->createCommandTester($exporter);
         $commandTester->execute([]);
 
-        $this->assertStringContainsString('domain1.en', $commandTester->getDisplay());
+        $file = self::OUTPUT_DIR.'/translations/messages.en.yaml';
+        $this->assertFileExists($file);
+        $this->assertStringEqualsFile($file, Yaml::dump(['key_a' => 'Value A', 'key_b' => 'Value B']));
         $this->assertStringContainsString('Old: 0', $commandTester->getDisplay());
         $this->assertStringContainsString('New: 2', $commandTester->getDisplay());
-
-        $this->assertFileExists(__DIR__.'/../_output/dummy/domain1.en.yaml');
-        $this->assertStringEqualsFile(__DIR__.'/../_output/dummy/domain1.en.yaml', Yaml::dump([
-            'key1' => 'Value1',
-            'key2' => 'Value2',
-        ]));
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    public function testExecuteWithLocalTranslations(): void
+    public function testMergesOnlyExistingKeysAndIgnoresNewDbKeys(): void
     {
-        // Create existing translation file
-        $dir = __DIR__.'/../_output/dummy';
-        (new Filesystem())->mkdir($dir);
-        file_put_contents($dir.'/domain1.en.yaml', Yaml::dump([
-            'key1' => 'Value1',
-            'key2' => 'Value2',
-        ]));
+        $this->createYamlFile('translations/messages.en.yaml', [
+            'existing_key' => 'Existing Value',
+            'shared_key' => 'Old Value',
+        ]);
 
-        $exporter = $this->createMock(TranslationExporter::class);
-        $exporter->method('getDomains')
-            ->willReturn([
-                [
-                    'id' => 1,
-                    'name' => 'domain1',
-                    'locale' => 'en',
-                    'path' => 'dummy/domain1.en.yaml',
-                ],
-            ]);
-        $exporter->method('exportDomain')
-            ->willReturn([
-                'key1' => 'Value1',
-                'newKey1' => 'New Value 1',
-            ]);
+        $exporter = $this->mockExporter(
+            [['id' => 1, 'name' => 'messages', 'locale' => 'en', 'path' => null]],
+            ['shared_key' => 'New Value', 'new_key' => 'New Key Value']
+        );
 
-        $this->assertFileExists(__DIR__.'/../_output/dummy/domain1.en.yaml');
-
-        $commandTester = $this->getCommandTester($exporter);
+        $commandTester = $this->createCommandTester($exporter);
         $commandTester->execute([]);
 
-        $this->assertStringContainsString('domain1.en', $commandTester->getDisplay());
+        $file = self::OUTPUT_DIR.'/translations/messages.en.yaml';
+        $this->assertStringEqualsFile($file, Yaml::dump([
+            'existing_key' => 'Existing Value',
+            'shared_key' => 'New Value',
+        ]));
         $this->assertStringContainsString('Old: 2', $commandTester->getDisplay());
         $this->assertStringContainsString('New: 2', $commandTester->getDisplay());
+    }
 
-        $this->assertFileExists(__DIR__.'/../_output/dummy/domain1.en.yaml');
-        $this->assertStringEqualsFile(__DIR__.'/../_output/dummy/domain1.en.yaml', Yaml::dump([
-            'key1' => 'Value1',
-            'key2' => 'Value2',
-            'newKey1' => 'New Value 1',
-        ]));
+    public function testDbValueOverwritesLocalValue(): void
+    {
+        $this->createYamlFile('translations/messages.en.yaml', [
+            'key1' => 'Local Value',
+        ]);
+
+        $exporter = $this->mockExporter(
+            [['id' => 1, 'name' => 'messages', 'locale' => 'en', 'path' => null]],
+            ['key1' => 'DB Value']
+        );
+
+        $commandTester = $this->createCommandTester($exporter);
+        $commandTester->execute([]);
+
+        $file = self::OUTPUT_DIR.'/translations/messages.en.yaml';
+        $this->assertStringEqualsFile($file, Yaml::dump(['key1' => 'DB Value']));
+    }
+
+    public function testOutputIsSortedAlphabetically(): void
+    {
+        $exporter = $this->mockExporter(
+            [['id' => 1, 'name' => 'messages', 'locale' => 'en', 'path' => null]],
+            ['zebra' => 'Z', 'apple' => 'A', 'mango' => 'M']
+        );
+
+        $commandTester = $this->createCommandTester($exporter);
+        $commandTester->execute([]);
+
+        $file = self::OUTPUT_DIR.'/translations/messages.en.yaml';
+        $content = file_get_contents($file);
+        $this->assertSame("apple: A\nmango: M\nzebra: Z\n", $content);
+    }
+
+    public function testResetFilesDeletesExistingFilesBeforeExport(): void
+    {
+        $this->createYamlFile('translations/old-domain.en.yaml', ['old_key' => 'Old']);
+        $this->createYamlFile('translations/old-domain.hu.yaml', ['old_key' => 'Régi']);
+
+        $exporter = $this->mockExporter(
+            [['id' => 1, 'name' => 'messages', 'locale' => 'en', 'path' => null]],
+            ['key1' => 'Value1']
+        );
+
+        $commandTester = $this->createCommandTester($exporter);
+        $commandTester->execute(['--reset-files' => true]);
+
+        $this->assertFileDoesNotExist(self::OUTPUT_DIR.'/translations/old-domain.en.yaml');
+        $this->assertFileDoesNotExist(self::OUTPUT_DIR.'/translations/old-domain.hu.yaml');
+        $this->assertFileExists(self::OUTPUT_DIR.'/translations/messages.en.yaml');
+        $this->assertStringContainsString('Deleted 2 YAML file(s)', $commandTester->getDisplay());
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    private function getCommandTester($exporter): CommandTester
+    public function testResetFilesWithNonExistentDirDoesNotFail(): void
     {
-        $command = new ExportTranslationsCommand($exporter, new Filesystem(), __DIR__.'/../_output');
+        $exporter = $this->mockExporter(
+            [['id' => 1, 'name' => 'messages', 'locale' => 'en', 'path' => null]],
+            ['key1' => 'Value1']
+        );
 
-        return new CommandTester($command);
+        $commandTester = $this->createCommandTester($exporter);
+        $commandTester->execute(['--reset-files' => true]);
+
+        $this->assertFileExists(self::OUTPUT_DIR.'/translations/messages.en.yaml');
+        $this->assertEquals(0, $commandTester->getStatusCode());
+    }
+
+    public function testExportsToCustomPath(): void
+    {
+        $exporter = $this->mockExporter(
+            [['id' => 1, 'name' => 'messages', 'locale' => 'en', 'path' => 'custom/messages.en.yaml']],
+            ['key1' => 'Value1']
+        );
+
+        $commandTester = $this->createCommandTester($exporter);
+        $commandTester->execute([]);
+
+        $this->assertFileExists(self::OUTPUT_DIR.'/custom/messages.en.yaml');
+    }
+
+    private function createCommandTester(TranslationExporter $exporter): CommandTester
+    {
+        $fileManager = new TranslationFileManager(new Filesystem(), self::OUTPUT_DIR, 'translations');
+
+        return new CommandTester(new ExportTranslationsCommand($exporter, $fileManager, new Filesystem(), self::OUTPUT_DIR));
+    }
+
+    private function mockExporter(array $domains, array $translations): TranslationExporter
+    {
+        $exporter = $this->createMock(TranslationExporter::class);
+        $exporter->method('getDomains')->willReturn($domains);
+        $exporter->method('exportDomain')->willReturn($translations);
+
+        return $exporter;
+    }
+
+    private function createYamlFile(string $relativePath, array $data): void
+    {
+        $path = self::OUTPUT_DIR.'/'.$relativePath;
+        $this->filesystem->mkdir(\dirname($path));
+        file_put_contents($path, Yaml::dump($data));
     }
 }
