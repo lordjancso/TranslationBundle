@@ -44,6 +44,7 @@ class ExtractTranslationsCommand extends Command
             ->addOption('as-tree', null, InputOption::VALUE_REQUIRED, 'Dump the messages as a tree-like structure.')
 
             // Our own options
+            ->addOption('cleanup-locales', null, InputOption::VALUE_NONE, 'Remove keys from other locale files that are not in the given locale. Exits after syncing.')
             ->addOption('reset-files', null, InputOption::VALUE_NONE, 'Delete all existing YAML translation files before extracting.')
             ->addOption('keep-intl-icu-suffix', null, InputOption::VALUE_NONE, 'Keep the +intl-icu suffix on generated files.')
             ->addOption('exclude-domain', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Translation domains to exclude.', $this->excludeDomains)
@@ -53,6 +54,19 @@ class ExtractTranslationsCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         $io = new SymfonyStyle($input, $output);
+
+        // Sync locales mode: prune other locale files based on reference locale, then exit
+        if ($input->getOption('cleanup-locales')) {
+            $result = $this->fileManager->cleanupLocales($input->getArgument('locale'));
+
+            if ($result['pruned'] > 0) {
+                $io->comment(sprintf('Pruned %d key(s) from %d file(s).', $result['pruned'], $result['files']));
+            } else {
+                $io->comment('All locale files are in sync.');
+            }
+
+            return Command::SUCCESS;
+        }
 
         // Step 1: Reset translation files if requested
         if ($input->getOption('reset-files')) {

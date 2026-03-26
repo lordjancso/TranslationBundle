@@ -100,6 +100,47 @@ class TranslationFileManager
         return $count;
     }
 
+    public function cleanupLocales(string $referenceLocale): array
+    {
+        $absoluteDir = $this->getAbsoluteTranslationsDir();
+
+        if (!$this->filesystem->exists($absoluteDir)) {
+            return ['pruned' => 0, 'files' => 0];
+        }
+
+        // Find all reference locale files
+        $refFinder = new Finder();
+        $refFinder->files()->in($absoluteDir)->name('*.'.$referenceLocale.'.yaml');
+
+        $pruned = 0;
+        $filesModified = 0;
+
+        foreach ($refFinder as $refFile) {
+            $refKeys = array_keys(\Symfony\Component\Yaml\Yaml::parseFile($refFile->getRealPath()) ?: []);
+            $domain = explode('.', $refFile->getFilename())[0];
+
+            // Find all other locale files for this domain
+            $otherFinder = new Finder();
+            $otherFinder->files()->in($absoluteDir)->name('/^'.preg_quote($domain, '/').'\.(?!'.preg_quote($referenceLocale, '/').'\.)\w+\.yaml$/');
+
+            foreach ($otherFinder as $otherFile) {
+                $otherYaml = \Symfony\Component\Yaml\Yaml::parseFile($otherFile->getRealPath()) ?: [];
+                $filtered = array_intersect_key($otherYaml, array_flip($refKeys));
+
+                $removed = \count($otherYaml) - \count($filtered);
+
+                if ($removed > 0) {
+                    ksort($filtered);
+                    $this->filesystem->dumpFile($otherFile->getRealPath(), \Symfony\Component\Yaml\Yaml::dump($filtered));
+                    $pruned += $removed;
+                    ++$filesModified;
+                }
+            }
+        }
+
+        return ['pruned' => $pruned, 'files' => $filesModified];
+    }
+
     public function normalizeFiles(): int
     {
         $absoluteDir = $this->getAbsoluteTranslationsDir();
