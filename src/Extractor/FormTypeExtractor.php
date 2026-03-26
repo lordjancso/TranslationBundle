@@ -15,6 +15,7 @@ class FormTypeExtractor implements ExtractorInterface
 {
     public const TRANSLATABLE_OPTIONS = ['label', 'help', 'placeholder', 'empty_value'];
     public const TRANSLATABLE_ATTR_KEYS = ['placeholder', 'title'];
+    public const NESTED_OPTION_GROUPS = ['first_options', 'second_options', 'entry_options'];
 
     private Parser $parser;
     private string $prefix = '';
@@ -145,6 +146,13 @@ class FormTypeExtractor implements ExtractorInterface
                     // choices => ['Label' => value, ...] — keys are translatable
                     if ('choices' === $key && $item->value instanceof Node\Expr\Array_) {
                         $this->extractChoiceKeys($item->value);
+                    }
+
+                    // Nested option groups: first_options, second_options, entry_options
+                    if (\in_array($key, FormTypeExtractor::NESTED_OPTION_GROUPS, true)
+                        && $item->value instanceof Node\Expr\Array_
+                    ) {
+                        $this->extractOptionsFromArray($item->value);
                     }
 
                     // attr => ['placeholder' => '...', 'title' => '...']

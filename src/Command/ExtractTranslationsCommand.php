@@ -2,6 +2,7 @@
 
 namespace Lordjancso\TranslationBundle\Command;
 
+use Lordjancso\TranslationBundle\Service\TranslationFileManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\ArrayInput;
@@ -10,8 +11,6 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
-use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Finder\Finder;
 
 #[AsCommand(
     name: 'lordjancso:extract-translations',
@@ -20,9 +19,7 @@ use Symfony\Component\Finder\Finder;
 class ExtractTranslationsCommand extends Command
 {
     public function __construct(
-        private readonly Filesystem $filesystem,
-        private readonly string $projectDir,
-        private readonly string $translationsDir,
+        private readonly TranslationFileManager $fileManager,
         private readonly array $excludeDomains,
     ) {
         parent::__construct();
@@ -47,6 +44,8 @@ class ExtractTranslationsCommand extends Command
             ->addOption('as-tree', null, InputOption::VALUE_REQUIRED, 'Dump the messages as a tree-like structure.')
 
             // Our own options
+            ->addOption('reset-files', null, InputOption::VALUE_NONE, 'Delete all existing YAML translation files before extracting.')
+            ->addOption('keep-intl-icu-suffix', null, InputOption::VALUE_NONE, 'Keep the +intl-icu suffix on generated files.')
             ->addOption('exclude-domain', null, InputOption::VALUE_IS_ARRAY | InputOption::VALUE_REQUIRED, 'Translation domains to exclude.', $this->excludeDomains)
         ;
     }
@@ -55,7 +54,16 @@ class ExtractTranslationsCommand extends Command
     {
         $io = new SymfonyStyle($input, $output);
 
-        // Step 1: Run Symfony's translation:extract command
+        // Step 1: Reset translation files if requested
+        if ($input->getOption('reset-files')) {
+            $count = $this->fileManager->resetFiles();
+
+            if ($count > 0) {
+                $io->comment(sprintf('Deleted %d YAML file(s).', $count));
+            }
+        }
+
+        // Step 2: Run Symfony's translation:extract command
         $io->section('Extracting translations using Symfony extractor');
 
         $result = $this->runSymfonyExtract($input, $output);
@@ -66,11 +74,31 @@ class ExtractTranslationsCommand extends Command
             return Command::FAILURE;
         }
 
-        // Step 2: Remove excluded domain files
+        // Step 3: Remove intl-icu suffix from filenames
+        if (!$input->getOption('keep-intl-icu-suffix')) {
+            $count = $this->fileManager->removeIntlIcuSuffix();
+
+            if ($count > 0) {
+                $io->comment(sprintf('Renamed %d file(s) to remove +intl-icu suffix.', $count));
+            }
+        }
+
+        // Step 4: Normalize YAML files to NFC
+        $count = $this->fileManager->normalizeFiles();
+
+        if ($count > 0) {
+            $io->comment(sprintf('Normalized %d YAML file(s) to NFC unicode.', $count));
+        }
+
+        // Step 5: Remove excluded domain files
         $excludeDomains = $input->getOption('exclude-domain');
 
         if (!empty($excludeDomains)) {
-            $this->removeExcludedDomains($this->translationsDir, $excludeDomains, $io);
+            $count = $this->fileManager->removeExcludedDomains($excludeDomains);
+
+            if ($count > 0) {
+                $io->comment(sprintf('Removed %d file(s) for excluded domains: %s', $count, implode(', ', $excludeDomains)));
+            }
         }
 
         $io->success('Translation extraction completed.');
@@ -130,28 +158,4 @@ class ExtractTranslationsCommand extends Command
         return $command->run(new ArrayInput($arguments), $output);
     }
 
-    private function removeExcludedDomains(string $translationsDir, array $excludeDomains, SymfonyStyle $io): void
-    {
-        $absoluteDir = $this->projectDir.'/'.$translationsDir;
-
-        if (!$this->filesystem->exists($absoluteDir)) {
-            return;
-        }
-
-        $count = 0;
-
-        foreach ($excludeDomains as $domain) {
-            $finder = new Finder();
-            $finder->files()->in($absoluteDir)->name('/^'.preg_quote($domain, '/').'[.+]/');
-
-            foreach ($finder as $file) {
-                $this->filesystem->remove($file->getRealPath());
-                ++$count;
-            }
-        }
-
-        if ($count > 0) {
-            $io->comment(sprintf('Removed %d file(s) for excluded domains: %s', $count, implode(', ', $excludeDomains)));
-        }
-    }
 }
