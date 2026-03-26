@@ -46,9 +46,11 @@ class TranslationImporter
 
     public function importKeys(TranslationDomain $translationDomain, array $yaml): array
     {
+        $normalizedKeys = array_map(fn ($key) => \Normalizer::normalize((string) $key, \Normalizer::FORM_C), array_keys($yaml));
+
         $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->getAllToImport($translationDomain);
 
-        $newTranslationKeys = array_diff(array_keys($yaml), $dbTranslationKeys);
+        $newTranslationKeys = array_diff($normalizedKeys, $dbTranslationKeys);
 
         if (!empty($newTranslationKeys)) {
             $dbTranslationKeys = $this->em->getRepository(TranslationKey::class)->insertAndGet($translationDomain, array_values($newTranslationKeys));
@@ -68,7 +70,7 @@ class TranslationImporter
 
             foreach ($batch as $keyId => $content) {
                 $placeholders[] = "(:content_{$i}, :locale_{$i}, :domain_id_{$i}, :key_id_{$i}, NOW(), NOW())";
-                $params["content_{$i}"] = $content;
+                $params["content_{$i}"] = \Normalizer::normalize((string) $content, \Normalizer::FORM_C);
                 $params["locale_{$i}"] = $locale;
                 $params["domain_id_{$i}"] = $domainId;
                 $params["key_id_{$i}"] = $keyId;

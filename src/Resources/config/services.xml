@@ -7,6 +7,7 @@
     <services>
         <service id="lordjancso_translation.command.export_translations" class="Lordjancso\TranslationBundle\Command\ExportTranslationsCommand">
             <argument type="service" id="lordjancso_translation.service.translation_exporter" />
+            <argument type="service" id="lordjancso_translation.service.translation_file_manager" />
             <argument type="service" id="filesystem" />
             <argument type="string">%kernel.project_dir%</argument>
             <tag name="console.command" />
@@ -25,6 +26,12 @@
             <argument type="string">%lordjancso_translation.extract.translations_dir%</argument>
             <argument>%lordjancso_translation.extract.exclude_domains%</argument>
             <tag name="console.command" />
+        </service>
+
+        <service id="lordjancso_translation.service.translation_file_manager" class="Lordjancso\TranslationBundle\Service\TranslationFileManager">
+            <argument type="service" id="filesystem" />
+            <argument type="string">%kernel.project_dir%</argument>
+            <argument type="string">%lordjancso_translation.extract.translations_dir%</argument>
         </service>
 
         <service id="lordjancso_translation.extractor.form_type" class="Lordjancso\TranslationBundle\Extractor\FormTypeExtractor">

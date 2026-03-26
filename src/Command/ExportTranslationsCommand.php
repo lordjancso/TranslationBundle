@@ -3,6 +3,7 @@
 namespace Lordjancso\TranslationBundle\Command;
 
 use Lordjancso\TranslationBundle\Service\TranslationExporter;
+use Lordjancso\TranslationBundle\Service\TranslationFileManager;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
@@ -10,7 +11,6 @@ use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\Finder\Finder;
 use Symfony\Component\Yaml\Yaml;
 
 #[AsCommand(
@@ -21,6 +21,7 @@ class ExportTranslationsCommand extends Command
 {
     public function __construct(
         private readonly TranslationExporter $exporter,
+        private readonly TranslationFileManager $fileManager,
         private readonly Filesystem $filesystem,
         private readonly string $projectDir,
     ) {
@@ -31,7 +32,7 @@ class ExportTranslationsCommand extends Command
     {
         $this
             ->addOption('export-path', 'p', InputOption::VALUE_OPTIONAL, 'The location of the translation files.', '')
-            ->addOption('clean', null, InputOption::VALUE_NONE, 'Delete all existing YAML translation files before exporting.')
+            ->addOption('reset-files', null, InputOption::VALUE_NONE, 'Delete all existing YAML translation files before exporting.')
         ;
     }
 
@@ -47,8 +48,12 @@ class ExportTranslationsCommand extends Command
             return Command::FAILURE;
         }
 
-        if ($input->getOption('clean')) {
-            $this->cleanTranslationsDir($exportPath.'/translations', $io);
+        if ($input->getOption('reset-files')) {
+            $count = $this->fileManager->resetFiles();
+
+            if ($count > 0) {
+                $io->comment(sprintf('Deleted %d YAML file(s).', $count));
+            }
         }
 
         $this->filesystem->mkdir($exportPath);
@@ -66,7 +71,13 @@ class ExportTranslationsCommand extends Command
                 $oldTranslations = Yaml::parseFile($filename) ?: [];
             }
 
-            $translations = array_merge($oldTranslations, $newTranslations);
+            if (!empty($oldTranslations)) {
+                // File exists: only update values for existing keys
+                $translations = array_merge($oldTranslations, array_intersect_key($newTranslations, $oldTranslations));
+            } else {
+                // File does not exist: write all DB translations
+                $translations = $newTranslations;
+            }
             ksort($translations);
 
             if (0 < count($translations)) {
@@ -82,27 +93,5 @@ class ExportTranslationsCommand extends Command
         }
 
         return Command::SUCCESS;
-    }
-
-    private function cleanTranslationsDir(string $translationsDir, SymfonyStyle $io): void
-    {
-        if (!$this->filesystem->exists($translationsDir)) {
-            return;
-        }
-
-        $finder = new Finder();
-        $finder->files()->in($translationsDir)->name('*.yaml');
-
-        $count = $finder->count();
-
-        if (0 === $count) {
-            return;
-        }
-
-        foreach ($finder as $file) {
-            $this->filesystem->remove($file->getRealPath());
-        }
-
-        $io->comment(sprintf('Deleted %d YAML file(s) from %s.', $count, $translationsDir));
     }
 }

@@ -4,6 +4,7 @@ namespace Lordjancso\TranslationBundle\Tests\Command;
 
 use Lordjancso\TranslationBundle\Command\ExportTranslationsCommand;
 use Lordjancso\TranslationBundle\Service\TranslationExporter;
+use Lordjancso\TranslationBundle\Service\TranslationFileManager;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\Filesystem\Filesystem;
@@ -56,7 +57,7 @@ class ExportTranslationsCommandTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    public function testMergesWithExistingFileAndKeepsLocalOnlyKeys(): void
+    public function testMergesOnlyExistingKeysAndIgnoresNewDbKeys(): void
     {
         $this->createYamlFile('translations/messages.en.yaml', [
             'existing_key' => 'Existing Value',
@@ -74,7 +75,6 @@ class ExportTranslationsCommandTest extends TestCase
         $file = self::OUTPUT_DIR.'/translations/messages.en.yaml';
         $this->assertStringEqualsFile($file, Yaml::dump([
             'existing_key' => 'Existing Value',
-            'new_key' => 'New Key Value',
             'shared_key' => 'New Value',
         ]));
         $this->assertStringContainsString('Old: 2', $commandTester->getDisplay());
@@ -114,7 +114,7 @@ class ExportTranslationsCommandTest extends TestCase
         $this->assertSame("apple: A\nmango: M\nzebra: Z\n", $content);
     }
 
-    public function testCleanDeletesExistingFilesBeforeExport(): void
+    public function testResetFilesDeletesExistingFilesBeforeExport(): void
     {
         $this->createYamlFile('translations/old-domain.en.yaml', ['old_key' => 'Old']);
         $this->createYamlFile('translations/old-domain.hu.yaml', ['old_key' => 'Régi']);
@@ -125,7 +125,7 @@ class ExportTranslationsCommandTest extends TestCase
         );
 
         $commandTester = $this->createCommandTester($exporter);
-        $commandTester->execute(['--clean' => true]);
+        $commandTester->execute(['--reset-files' => true]);
 
         $this->assertFileDoesNotExist(self::OUTPUT_DIR.'/translations/old-domain.en.yaml');
         $this->assertFileDoesNotExist(self::OUTPUT_DIR.'/translations/old-domain.hu.yaml');
@@ -134,7 +134,7 @@ class ExportTranslationsCommandTest extends TestCase
         $this->assertEquals(0, $commandTester->getStatusCode());
     }
 
-    public function testCleanWithNonExistentDirDoesNotFail(): void
+    public function testResetFilesWithNonExistentDirDoesNotFail(): void
     {
         $exporter = $this->mockExporter(
             [['id' => 1, 'name' => 'messages', 'locale' => 'en', 'path' => null]],
@@ -142,7 +142,7 @@ class ExportTranslationsCommandTest extends TestCase
         );
 
         $commandTester = $this->createCommandTester($exporter);
-        $commandTester->execute(['--clean' => true]);
+        $commandTester->execute(['--reset-files' => true]);
 
         $this->assertFileExists(self::OUTPUT_DIR.'/translations/messages.en.yaml');
         $this->assertEquals(0, $commandTester->getStatusCode());
@@ -163,7 +163,9 @@ class ExportTranslationsCommandTest extends TestCase
 
     private function createCommandTester(TranslationExporter $exporter): CommandTester
     {
-        return new CommandTester(new ExportTranslationsCommand($exporter, new Filesystem(), self::OUTPUT_DIR));
+        $fileManager = new TranslationFileManager(new Filesystem(), self::OUTPUT_DIR, 'translations');
+
+        return new CommandTester(new ExportTranslationsCommand($exporter, $fileManager, new Filesystem(), self::OUTPUT_DIR));
     }
 
     private function mockExporter(array $domains, array $translations): TranslationExporter
