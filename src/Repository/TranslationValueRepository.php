@@ -31,11 +31,9 @@ class TranslationValueRepository extends EntityRepository
         return $this->createQueryBuilder('tv')
             ->select('tk.name AS key', 'tv.content')
             ->innerJoin('tv.key', 'tk')
-            ->innerJoin('tv.domain', 'td')
             ->andWhere('tk.domain = :domain')
-            ->andWhere('td.name = :domain')
             ->setParameter('domain', $domain)
-            ->andWhere('td.locale = :locale')
+            ->andWhere('tv.locale = :locale')
             ->setParameter('locale', $locale)
             ->getQuery()
             ->getArrayResult();

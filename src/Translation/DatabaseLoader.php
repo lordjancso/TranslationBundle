@@ -35,11 +35,9 @@ class DatabaseLoader implements LoaderInterface
         $this->cache = [];
 
         $rows = $this->em->getConnection()->fetchAllAssociative(
-            'SELECT tk.name AS `key`, tv.content, tk.domain, td.locale
+            'SELECT tk.name AS `key`, tv.content, tk.domain, tv.locale
              FROM lj_translation_values tv
-             INNER JOIN lj_translation_keys tk ON tv.key_id = tk.id
-             INNER JOIN lj_translation_domains td ON tv.domain_id = td.id
-             WHERE td.name = tk.domain'
+             INNER JOIN lj_translation_keys tk ON tv.key_id = tk.id'
         );
 
         foreach ($rows as $row) {
