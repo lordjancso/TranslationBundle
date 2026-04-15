@@ -35,6 +35,7 @@ class ImportTranslationsCommand extends Command
             ->addOption('truncate', null, InputOption::VALUE_NONE, 'Truncate all translation tables before importing.')
             ->addOption('force', 'f', InputOption::VALUE_NONE, 'Import without confirmation even if tables are not empty.')
             ->addOption('batch-size', null, InputOption::VALUE_REQUIRED, 'Number of rows per INSERT batch.', 500)
+            ->addOption('sleep', null, InputOption::VALUE_REQUIRED, 'Sleep between batches in milliseconds.', 0)
         ;
     }
 
@@ -97,12 +98,18 @@ class ImportTranslationsCommand extends Command
                     continue;
                 }
 
-                $result = $this->importTranslationDomain($domain, $locale, $relativePath, $file->getRealPath(), (int) $input->getOption('batch-size'));
+                $result = $this->importTranslationDomain($domain, $locale, $relativePath, $file->getRealPath(), (int) $input->getOption('batch-size'), (int) $input->getOption('sleep'));
+
+                $sleep = (int) $input->getOption('sleep');
 
                 if ('no_changes' === $result['status']) {
                     $io->writeln('<comment>SKIP! No changes in the file.</comment>');
                 } elseif ('success' === $result['status']) {
                     $io->writeln("<info>SUCCESS! {$result['modify']} modified, {$result['delete']} deleted.</info>");
+
+                    if ($sleep > 0) {
+                        usleep($sleep * 1000);
+                    }
                 }
             }
 
@@ -116,7 +123,7 @@ class ImportTranslationsCommand extends Command
         return Command::SUCCESS;
     }
 
-    protected function importTranslationDomain(string $domain, string $locale, string $relativePath, string $absolutePath, int $batchSize): array
+    protected function importTranslationDomain(string $domain, string $locale, string $relativePath, string $absolutePath, int $batchSize, int $sleepBetweenBatches): array
     {
         // manage TranslationDomain
 
@@ -145,7 +152,7 @@ class ImportTranslationsCommand extends Command
         }
 
         if (!empty($contentsAndKeyIds)) {
-            $this->importer->importValues($translationDomain->getId(), $locale, $contentsAndKeyIds, $batchSize);
+            $this->importer->importValues($translationDomain->getId(), $locale, $contentsAndKeyIds, $batchSize, $sleepBetweenBatches);
         }
 
         if (!empty($dbTranslationKeys)) {
