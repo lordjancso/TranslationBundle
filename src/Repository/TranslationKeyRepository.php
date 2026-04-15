@@ -58,7 +58,7 @@ class TranslationKeyRepository extends EntityRepository
     public function getStats(): array
     {
         $items = $this->createQueryBuilder('tk')
-            ->select('COUNT(DISTINCT tk.id) AS count, tk.domain')
+            ->select('COUNT(tk.id) AS count, tk.domain')
             ->groupBy('tk.domain')
             ->orderBy('tk.domain', 'ASC')
             ->getQuery()

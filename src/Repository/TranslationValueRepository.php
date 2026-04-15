@@ -31,11 +31,9 @@ class TranslationValueRepository extends EntityRepository
         return $this->createQueryBuilder('tv')
             ->select('tk.name AS key', 'tv.content')
             ->innerJoin('tv.key', 'tk')
-            ->innerJoin('tv.domain', 'td')
             ->andWhere('tk.domain = :domain')
-            ->andWhere('td.name = :domain')
             ->setParameter('domain', $domain)
-            ->andWhere('td.locale = :locale')
+            ->andWhere('tv.locale = :locale')
             ->setParameter('locale', $locale)
             ->getQuery()
             ->getArrayResult();
@@ -44,7 +42,7 @@ class TranslationValueRepository extends EntityRepository
     public function getStats(string $domain): array
     {
         $items = $this->createQueryBuilder('tv')
-            ->select('COUNT(DISTINCT tv.id) AS count, tv.locale')
+            ->select('COUNT(tv.id) AS count, tv.locale')
             ->innerJoin('tv.key', 'tk')
             ->andWhere('tk.domain = :domain')
             ->setParameter('domain', $domain)
@@ -64,7 +62,7 @@ class TranslationValueRepository extends EntityRepository
     public function getAllStats(): array
     {
         $items = $this->createQueryBuilder('tv')
-            ->select('tk.domain, tv.locale, COUNT(DISTINCT tv.id) AS count')
+            ->select('tk.domain, tv.locale, COUNT(tv.id) AS count')
             ->innerJoin('tv.key', 'tk')
             ->groupBy('tk.domain, tv.locale')
             ->getQuery()

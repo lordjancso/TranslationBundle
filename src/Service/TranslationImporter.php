@@ -59,11 +59,11 @@ class TranslationImporter
         return $dbTranslationKeys;
     }
 
-    public function importValues(int $domainId, string $locale, array $contentsAndKeyIds, int $batchSize = 500): bool
+    public function importValues(int $domainId, string $locale, array $contentsAndKeyIds, int $batchSize = 500, int $sleepBetweenBatches = 0): bool
     {
         $batches = array_chunk($contentsAndKeyIds, $batchSize, true);
 
-        foreach ($batches as $batch) {
+        foreach ($batches as $index => $batch) {
             $placeholders = [];
             $params = [];
             $i = 0;
@@ -82,6 +82,10 @@ class TranslationImporter
             $sql .= ' ON DUPLICATE KEY UPDATE content = VALUES(content), updated_at = VALUES(updated_at)';
 
             $this->em->getConnection()->executeStatement($sql, $params);
+
+            if ($sleepBetweenBatches > 0 && $index < count($batches) - 1) {
+                usleep($sleepBetweenBatches * 1000);
+            }
         }
 
         return true;
