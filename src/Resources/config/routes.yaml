@@ -1,0 +1,4 @@
+lordjancso_translation_index:
+    path: /
+    controller: lordjancso_translation.controller.translations::index
+    methods: GET
