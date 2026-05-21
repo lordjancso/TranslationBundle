@@ -49,9 +49,18 @@ class ImportTranslationsCommand extends Command
             return Command::FAILURE;
         }
 
+        $sleep = (int) $input->getOption('sleep');
+        $batchSize = (int) $input->getOption('batch-size');
+
         if ($input->getOption('truncate')) {
             $this->manager->truncate();
             $io->comment('All translation tables truncated.');
+
+            if ($sleep > 0) {
+                $postTruncateSleep = $sleep * 5;
+                $io->comment(sprintf('Sleeping %d ms after truncate.', $postTruncateSleep));
+                usleep($postTruncateSleep * 1000);
+            }
         } elseif (!$this->manager->isTablesEmpty()) {
             if (!$input->getOption('force')) {
                 if (!$io->confirm('Translation tables are not empty. Continue importing?', false)) {
@@ -83,41 +92,38 @@ class ImportTranslationsCommand extends Command
             return Command::FAILURE;
         }
 
-        $this->manager->beginTransaction();
+        foreach ($finder as $file) {
+            $io->write("Importing {$file->getRealPath()}... ");
 
-        try {
-            foreach ($finder as $file) {
-                $io->write("Importing {$file->getRealPath()}... ");
+            $relativePath = str_replace($this->projectDir.'/', '', $file->getRealPath());
+            [$domain, $locale] = explode('.', $file->getFilename());
 
-                $relativePath = str_replace($this->projectDir.'/', '', $file->getRealPath());
-                [$domain, $locale] = explode('.', $file->getFilename());
+            if (!in_array($locale, $this->manager->getManagedLocales(), true)) {
+                $io->writeln('<comment>SKIP! Not in managed locales.</comment>');
 
-                if (!in_array($locale, $this->manager->getManagedLocales(), true)) {
-                    $io->writeln('<comment>SKIP! Not in managed locales.</comment>');
-
-                    continue;
-                }
-
-                $result = $this->importTranslationDomain($domain, $locale, $relativePath, $file->getRealPath(), (int) $input->getOption('batch-size'), (int) $input->getOption('sleep'));
-
-                $sleep = (int) $input->getOption('sleep');
-
-                if ('no_changes' === $result['status']) {
-                    $io->writeln('<comment>SKIP! No changes in the file.</comment>');
-                } elseif ('success' === $result['status']) {
-                    $io->writeln("<info>SUCCESS! {$result['modify']} modified, {$result['delete']} deleted.</info>");
-
-                    if ($sleep > 0) {
-                        usleep($sleep * 1000);
-                    }
-                }
+                continue;
             }
 
-            $this->manager->commit();
-        } catch (\Throwable $e) {
-            $this->manager->rollBack();
+            $this->manager->beginTransaction();
 
-            throw $e;
+            try {
+                $result = $this->importTranslationDomain($domain, $locale, $relativePath, $file->getRealPath(), $batchSize, $sleep);
+                $this->manager->commit();
+            } catch (\Throwable $e) {
+                $this->manager->rollBack();
+
+                throw $e;
+            }
+
+            if ('no_changes' === $result['status']) {
+                $io->writeln('<comment>SKIP! No changes in the file.</comment>');
+            } elseif ('success' === $result['status']) {
+                $io->writeln("<info>SUCCESS! {$result['modify']} modified, {$result['delete']} deleted.</info>");
+
+                if ($sleep > 0) {
+                    usleep($sleep * 1000);
+                }
+            }
         }
 
         return Command::SUCCESS;
